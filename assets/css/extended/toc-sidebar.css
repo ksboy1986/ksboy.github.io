@@ -1,19 +1,21 @@
 /* TOC 右侧栏布局 */
 .post-body {
     display: flex;
-    gap: var(--content-gap);
-    max-width: var(--max-width);
+    gap: 40px;
+    max-width: 1400px;
     margin: 0 auto;
     align-items: flex-start;
+    padding: 0 20px;
 }
 
 .post-content {
     flex: 1;
     min-width: 0;
+    max-width: 900px;
 }
 
 .toc-sidebar {
-    flex: 0 0 220px;
+    flex: 0 0 200px;
     position: sticky;
     top: 80px;
     height: calc(100vh - 100px);
@@ -24,8 +26,21 @@
     margin-bottom: 0;
 }
 
+.toc-sidebar details.toc summary {
+    padding: 0.3rem 1rem;
+}
+
+.toc-sidebar details.toc .inner {
+    margin: 0 1rem;
+    padding-bottom: 0.5rem;
+}
+
+.toc-sidebar details.toc li ul {
+    margin-inline-start: 1rem;
+}
+
 /* 小屏幕响应式：TOC 回到上方 */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .post-body {
         flex-direction: column;
     }
