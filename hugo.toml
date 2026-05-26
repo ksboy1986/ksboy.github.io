@@ -3,6 +3,7 @@ title = "超越网"
 theme = "PaperMod"
 
 [params]
+  mainSections = ["posts"]
   defaultTheme = "dark"
   showReadingTime = true
   ShowShareButtons = true
@@ -21,3 +22,5 @@ theme = "PaperMod"
 [markup]
   [markup.highlight]
     noClasses = false
+
+
