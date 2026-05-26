@@ -1,7 +1,7 @@
 /* TOC 右侧固定布局 */
 .post-body {
     display: block;
-    max-width: 800px;
+    max-width: 850px;
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -12,9 +12,9 @@
 
 .toc-sidebar {
     position: fixed;
-    right: 40px;
+    right: 60px;
     top: 100px;
-    width: 240px;
+    width: 260px;
     max-height: calc(100vh - 120px);
     overflow-y: auto;
     z-index: 100;
