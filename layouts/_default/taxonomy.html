@@ -1,0 +1,40 @@
+{{- define "main" }}
+
+{{- if not .IsHome }}
+<header class="page-header">
+  {{- partial "breadcrumbs.html" . }}
+  <h1>{{ .Title }}</h1>
+  {{- if .Description }}
+  <div class="post-description">
+    {{ .Description | markdownify }}
+  </div>
+  {{- end }}
+</header>
+{{- end }}
+
+{{- $pages := .Pages }}
+{{- if and (gt (len $pages) 0) }}
+<div class="post-list">
+  {{- range $pages }}
+  <article class="post-entry">
+    <header class="entry-header">
+      <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+    </header>
+    <div class="entry-meta">
+      <time>{{ .Date.Format "2006-01-02" }}</time>
+      {{- with .Params.categories }}
+      <span class="categories">
+        {{- range . }}
+        <a href="{{ "/categories/" | relLangURL }}{{ . | urlize | lower }}/">{{ . }}</a>
+        {{- end }}
+      </span>
+      {{- end }}
+    </div>
+  </article>
+  {{- end }}
+</div>
+{{- else }}
+<p>暂无文章</p>
+{{- end }}
+
+{{- end }}{{/* end main */}}

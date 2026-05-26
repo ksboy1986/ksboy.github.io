@@ -1,0 +1,16 @@
+{{- define "main" }}
+
+<header class="page-header">
+  <h1>分类</h1>
+</header>
+
+<div class="taxonomy-list">
+  {{- range .Site.Taxonomies.categories }}
+  <article class="taxonomy-entry">
+    <h2><a href="{{ .Page.Permalink }}">{{ .Page.Title }}</a></h2>
+    <p>{{ .Count }} 篇文章</p>
+  </article>
+  {{- end }}
+</div>
+
+{{- end }}{{/* end main */}}

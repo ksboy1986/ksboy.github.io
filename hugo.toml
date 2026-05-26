@@ -2,6 +2,15 @@ baseURL = "https://www.chaoyuewang.cn/"
 title = "超越网"
 theme = "PaperMod"
 
+# 分类系统配置
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[params.taxonomy]
+  category = "分类"
+  tag = "标签"
+
 [params]
   mainSections = ["posts"]
   tocPosition = "right"
@@ -23,5 +32,3 @@ theme = "PaperMod"
 [markup]
   [markup.highlight]
     noClasses = false
-
-
