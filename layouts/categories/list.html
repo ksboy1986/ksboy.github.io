@@ -1,20 +1,6 @@
 {{- define "main" }}
 
-{{- if .IsNode }}
-<!-- 分类列表页面 -->
-<header class="page-header">
-  <h1>分类</h1>
-</header>
-
-<div class="taxonomy-list">
-  {{- range .Site.Taxonomies.categories }}
-  <article class="taxonomy-entry">
-    <h2><a href="{{ .Page.Permalink }}">{{ .Page.Title }}</a></h2>
-    <p>{{ .Count }} 篇文章</p>
-  </article>
-  {{- end }}
-</div>
-{{- else }}
+{{- if .Data.Term }}
 <!-- 分类详情页面 -->
 <header class="page-header">
   {{- partial "breadcrumbs.html" . }}
@@ -45,6 +31,20 @@
 {{- else }}
 <p>暂无文章</p>
 {{- end }}
+{{- else }}
+<!-- 分类列表页面 -->
+<header class="page-header">
+  <h1>分类</h1>
+</header>
+
+<div class="taxonomy-list">
+  {{- range .Site.Taxonomies.categories }}
+  <article class="taxonomy-entry">
+    <h2><a href="{{ .Page.Permalink }}">{{ .Page.Title }}</a></h2>
+    <p>{{ .Count }} 篇文章</p>
+  </article>
+  {{- end }}
+</div>
 {{- end }}
 
 {{- end }}{{/* end main */}}
