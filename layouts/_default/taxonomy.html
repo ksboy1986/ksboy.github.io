@@ -12,7 +12,7 @@
 </header>
 {{- end }}
 
-{{- $pages := .Pages }}
+{{- $pages := .RegularPages }}
 {{- if and (gt (len $pages) 0) }}
 <div class="post-list">
   {{- range $pages }}
