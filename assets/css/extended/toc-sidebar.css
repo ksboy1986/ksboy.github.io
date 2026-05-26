@@ -22,12 +22,12 @@
 
 .toc-sidebar details.toc {
     margin-bottom: 0;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .toc-sidebar details.toc summary {
     padding: 0.3rem 1rem;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .toc-sidebar details.toc .inner {
@@ -36,7 +36,7 @@
 }
 
 .toc-sidebar details.toc .inner a {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--secondary);
 }
 
