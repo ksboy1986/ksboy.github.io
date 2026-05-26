@@ -1,0 +1,40 @@
+/* TOC 右侧栏布局 */
+.post-body {
+    display: flex;
+    gap: var(--content-gap);
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+.toc-sidebar {
+    flex: 0 0 250px;
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.toc-sidebar details.toc {
+    margin-bottom: 0;
+}
+
+.post-content-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 小屏幕响应式：TOC 回到上方 */
+@media (max-width: 1024px) {
+    .post-body {
+        flex-direction: column;
+    }
+    
+    .toc-sidebar {
+        flex: none;
+        position: static;
+        height: auto;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}
+
