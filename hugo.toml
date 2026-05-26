@@ -4,6 +4,7 @@ theme = "PaperMod"
 
 [params]
   mainSections = ["posts"]
+  tocPosition = "right"
   defaultTheme = "dark"
   showReadingTime = true
   ShowShareButtons = true
