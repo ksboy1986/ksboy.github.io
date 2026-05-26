@@ -16,11 +16,13 @@
 </div>
 {{- end }}
 
-{{- $pages := .Site.RegularPages }}
-
-{{- if .IsHome }}
-{{- $pages = where $pages "Section" "posts" }}
+<p>Total RegularPages: {{ len .Site.RegularPages }}</p>
+{{- range .Site.RegularPages }}
+<p>Page: {{ .Title }}, Section: "{{ .Section }}"</p>
 {{- end }}
+
+{{- $pages := where .Site.RegularPages "Section" "posts" }}
+<p>Filtered pages: {{ len $pages }}</p>
 
 {{- range $pages }}
 <article class="post-entry">
