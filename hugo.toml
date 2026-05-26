@@ -1,0 +1,36 @@
+baseURL = "https://www.chaoyuewang.cn/"
+languageCode = "zh-cn"
+title = "潮越网"
+theme = "PaperMod"
+
+[params]
+  mode = "dark"
+  defaultTheme = "dark"
+  ShowShareButtons = false
+  ShowReadingTime = true
+  disableSpecial1stPost = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowRssButtonInSectionTermList = true
+  ShowFullTextinRSS = true
+
+[params.author]
+  name = "ksboy"
+  link = "https://www.chaoyuewang.cn/"
+
+[outputs]
+  home = ["HTML", "RSS"]
+
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  series = "series"
+
+[[menu.main]]
+name = "分类"
+pageRef = "categories"
+weight = 3
+
+[privacy]
+  [privacy.youtube]
+    privacyEnhanced = true
