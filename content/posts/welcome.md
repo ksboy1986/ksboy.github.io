@@ -2,8 +2,8 @@
 title: "欢迎来到潮越网"
 date: 2026-05-26T12:30:00+08:00
 draft: false
-tags: ["随笔"]
-categories: ["博客"]
+tags: ["infra", "hugo", "github", "blog"]
+categories: ["infra"]
 ---
 
 欢迎来到 **潮越网**（www.chaoyuewang.cn）。
