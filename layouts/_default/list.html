@@ -16,15 +16,15 @@
 </div>
 {{- end }}
 
-<p>Total RegularPages: {{ len .Site.RegularPages }}</p>
-{{- range .Site.RegularPages }}
-<p>Page: {{ .Title }}, Section: "{{ .Section }}"</p>
+{{- $pages := where .Site.RegularPages "Section" "posts" }}
+<p>Filtered: {{ len $pages }}</p>
+
+{{- if gt (len $pages) 0 }}
+<p>Has pages!</p>
 {{- end }}
 
-{{- $pages := where .Site.RegularPages "Section" "posts" }}
-<p>Filtered pages: {{ len $pages }}</p>
-
 {{- range $pages }}
+<p>In range: {{ .Title }}</p>
 <article class="post-entry">
   <header class="entry-header">
     <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
