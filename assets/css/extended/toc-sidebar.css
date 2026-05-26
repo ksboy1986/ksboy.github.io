@@ -1,25 +1,23 @@
-/* TOC 右侧栏布局 */
+/* TOC 右侧固定布局 */
 .post-body {
-    display: flex;
-    gap: 40px;
-    max-width: 1400px;
+    display: block;
+    max-width: 900px;
     margin: 0 auto;
-    align-items: flex-start;
     padding: 0 20px;
 }
 
 .post-content {
-    flex: 1;
-    min-width: 0;
-    max-width: 900px;
+    width: 100%;
 }
 
 .toc-sidebar {
-    flex: 0 0 200px;
-    position: sticky;
-    top: 80px;
-    height: calc(100vh - 100px);
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    width: 200px;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
+    z-index: 100;
 }
 
 .toc-sidebar details.toc {
@@ -41,16 +39,12 @@
 
 /* 小屏幕响应式：TOC 回到上方 */
 @media (max-width: 1200px) {
-    .post-body {
-        flex-direction: column;
-    }
-    
     .toc-sidebar {
-        flex: none;
         position: static;
-        height: auto;
+        width: 100%;
+        max-height: auto;
+        margin: 20px auto;
         max-width: 600px;
-        margin: 0 auto;
     }
 }
 

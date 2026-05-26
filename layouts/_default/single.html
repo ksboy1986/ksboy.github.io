@@ -38,13 +38,13 @@
       {{- else }}{{ .Content }}{{ end }}
     </div>
     {{- end }}
-    
-    {{- if (.Param "ShowToc") }}
-    <aside class="toc-sidebar">
-      {{- partial "toc.html" . }}
-    </aside>
-    {{- end }}
   </div>
+  
+  {{- if (.Param "ShowToc") }}
+  <aside class="toc-sidebar">
+    {{- partial "toc.html" . }}
+  </aside>
+  {{- end }}
 
   {{- partial "extend_post_content.html" . }}
 
