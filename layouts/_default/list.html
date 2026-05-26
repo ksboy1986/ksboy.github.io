@@ -2,15 +2,10 @@
 <div class="home-posts">
   <h1 class="entry-title">文章列表</h1>
   <div class="post-list">
-    {{ range where .Site.RegularPages "Type" "posts" }}
-    <article class="post-entry">
-      <header class="entry-header">
-        <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
-      </header>
-      <div class="entry-meta">
-        <time>{{ .Date.Format "2006-01-02" }}</time>
-      </div>
-    </article>
+    {{ range .Site.RegularPages }}
+    {{ if eq .Type "posts" }}
+    <p>Match: {{ .Title }}</p>
+    {{ end }}
     {{ end }}
   </div>
 </div>
