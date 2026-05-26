@@ -15,13 +15,13 @@ theme = "PaperMod"
 [[menu.main]]
   identifier = "categories"
   name = "分类"
-  pageRef = "/categories/"
+  url = "/categories/"
   weight = 10
 
 [[menu.main]]
   identifier = "tags"
   name = "标签"
-  pageRef = "/tags/"
+  url = "/tags/"
   weight = 20
 
 [params]
