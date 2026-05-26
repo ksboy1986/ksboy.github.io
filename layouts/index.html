@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}">
+<head>
+    {{- partial "head.html" . }}
+</head>
+<body>
+    <div class="container" role="main">
+        <header>
+            {{- partial "header.html" . }}
+        </header>
+
+        <main>
+            <div class="post-content">
+                <h1>{{ .Site.Title }}</h1>
+                
+                {{- if .Site.Params.showTaxonomyList }}
+                <section class="taxonomy-list">
+                    <h2>{{ .Site.Params.taxonomyCardHeader | default "分类" }}</h2>
+                    <div class="taxonomy-grid">
+                        {{- range $taxonomyName, $taxonomy := .Site.Taxonomies.categories }}
+                        {{- if gt (len $taxonomy) 0 }}
+                        <a href="{{ printf "/categories/%s" $taxonomyName | relLangURL }}" class="taxonomy-card">
+                            <span class="taxonomy-name">{{ $taxonomyName }}</span>
+                            <span class="taxonomy-count">{{ len $taxonomy }}</span>
+                        </a>
+                        {{- end }}
+                        {{- end }}
+                    </div>
+                </section>
+                <hr>
+                {{- end }}
+
+                <section class="post-list">
+                    {{- range first 10 .Site.RegularPages }}
+                    <article class="post-item">
+                        <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+                        <time>{{ .Date.Format "2006-01-02" }}</time>
+                        {{- if .Params.categories }}
+                        <span class="categories">
+                            {{- range .Params.categories }}
+                            <a href="{{ printf "/categories/%s" . | relLangURL }}">{{ . }}</a>
+                            {{- end }}
+                        </span>
+                        {{- end }}
+                    </article>
+                    {{- end }}
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            {{- partial "footer.html" . }}
+        </footer>
+    </div>
+</body>
+</html>
