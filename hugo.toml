@@ -2,10 +2,6 @@ baseURL = "https://www.chaoyuewang.cn/"
 languageCode = "zh-cn"
 title = "潮越网"
 
-[module]
-  [[module.imports]]
-    path = "github.com/adityatelange/hugo-PaperMod"
-
 [params]
   mode = "dark"
   defaultTheme = "dark"
