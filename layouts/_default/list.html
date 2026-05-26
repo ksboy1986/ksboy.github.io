@@ -19,10 +19,7 @@
 {{- $pages := .Site.RegularPages }}
 
 {{- if .IsHome }}
-{{- range $pages }}
-<p>Page: {{ .Title }}, Section: "{{ .Section }}", Type: "{{ .Type }}"</p>
-{{- end }}
-{{- $pages = where $pages "Section" "posts/security" }}
+{{- $pages = where $pages "Section" "posts" }}
 {{- end }}
 
 {{- range $pages }}
