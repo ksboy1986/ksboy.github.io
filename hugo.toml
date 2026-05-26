@@ -7,10 +7,6 @@ theme = "PaperMod"
   category = "categories"
   tag = "tags"
 
-[params.taxonomy]
-  category = "分类"
-  tag = "标签"
-
 # 导航菜单配置
 [[menu.main]]
   identifier = "categories"
