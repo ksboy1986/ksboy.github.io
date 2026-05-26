@@ -1,0 +1,23 @@
+baseURL = "https://www.chaoyuewang.cn/"
+title = "潮越网"
+theme = "PaperMod"
+
+[params]
+  defaultTheme = "dark"
+  showReadingTime = true
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowRssButtonInSectionMenu = true
+  ShowFullTextinRSS = true
+  ShowToc = true
+  TocOpen = true
+  comments = false
+
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+
+[markup]
+  [markup.highlight]
+    noClasses = false
