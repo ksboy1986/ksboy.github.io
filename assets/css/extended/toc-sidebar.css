@@ -4,10 +4,16 @@
     gap: var(--content-gap);
     max-width: var(--max-width);
     margin: 0 auto;
+    align-items: flex-start;
+}
+
+.post-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .toc-sidebar {
-    flex: 0 0 250px;
+    flex: 0 0 220px;
     position: sticky;
     top: 80px;
     height: calc(100vh - 100px);
@@ -16,11 +22,6 @@
 
 .toc-sidebar details.toc {
     margin-bottom: 0;
-}
-
-.post-content-wrapper {
-    flex: 1;
-    min-width: 0;
 }
 
 /* 小屏幕响应式：TOC 回到上方 */
