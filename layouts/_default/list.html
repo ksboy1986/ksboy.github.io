@@ -2,7 +2,7 @@
 <div class="home-posts">
   <h1 class="entry-title">文章列表</h1>
   <div class="post-list">
-    {{ range .Site.RegularPages "posts" }}
+    {{ range where .Site.RegularPages "Section" "posts" }}
     <article class="post-entry">
       <header class="entry-header">
         <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
