@@ -11,6 +11,19 @@ theme = "PaperMod"
   category = "分类"
   tag = "标签"
 
+# 导航菜单配置
+[[menu.main]]
+  identifier = "categories"
+  name = "分类"
+  pageRef = "/categories"
+  weight = 10
+
+[[menu.main]]
+  identifier = "tags"
+  name = "标签"
+  pageRef = "/tags"
+  weight = 20
+
 [params]
   mainSections = ["posts"]
   tocPosition = "right"
