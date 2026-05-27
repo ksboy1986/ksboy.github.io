@@ -16,15 +16,17 @@
 <div class="post-list home-list">
 {{- range $paginator.Pages }}
   <article class="post-entry">
-    <header class="entry-header">
-      <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
-    </header>
-    <div class="entry-content">
-      <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
-    </div>
-    <footer class="entry-meta">
-      <time>{{ .Date.Format "2006-01-02" }}</time>
-    </footer>
+    <a href="{{ .Permalink }}" class="post-entry-link">
+      <header class="entry-header">
+        <h2>{{ .Title }}</h2>
+      </header>
+      <div class="entry-content">
+        <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
+      </div>
+      <footer class="entry-meta">
+        <time>{{ .Date | time.Format "2006-01-02 15:04" }}</time>
+      </footer>
+    </a>
   </article>
 {{- end }}
 </div>

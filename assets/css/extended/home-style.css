@@ -34,7 +34,7 @@
 }
 
 .home-list .post-entry {
-  padding: 2rem 0;
+  padding: 0;
   border-bottom: 1px solid #2a2a4a;
   transition: transform 0.2s ease;
 }
@@ -43,18 +43,25 @@
   transform: translateX(4px);
 }
 
+.home-list .post-entry-link {
+  display: block;
+  padding: 2rem 0;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.home-list .post-entry:hover .post-entry-link {
+  color: inherit;
+}
+
 .home-list .entry-header h2 {
   font-size: 1.4rem;
   margin-bottom: 0.5rem;
-}
-
-.home-list .entry-header h2 a {
-  color: #e0e0e0;
-  text-decoration: none;
   transition: color 0.2s ease;
 }
 
-.home-list .entry-header h2 a:hover {
+.home-list .entry-header h2:hover {
   color: #4a9eff;
 }
 
@@ -68,9 +75,6 @@
 .home-list .entry-meta {
   font-size: 0.85rem;
   color: #666;
-}
-
-.home-list .entry-meta time {
   font-family: monospace;
 }
 
@@ -119,7 +123,7 @@
   .hero-subtitle {
     font-size: 1rem;
   }
-  .home-list .post-entry {
+  .home-list .post-entry-link {
     padding: 1.5rem 0;
   }
   .home-list .entry-header h2 {
