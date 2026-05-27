@@ -9,7 +9,7 @@ theme = "PaperMod"
   tag = "tags"
   series = "series"
 
-# 导航菜单配置 - 分类直接显示在顶部
+# 导航菜单配置
 [[menu.main]]
   identifier = "home"
   name = "首页"
@@ -40,12 +40,6 @@ theme = "PaperMod"
   url = "/categories/meta/"
   weight = 40
 
-[[menu.main]]
-  identifier = "tags"
-  name = "标签"
-  url = "/tags/"
-  weight = 50
-
 [params]
   mode = "dark"
   defaultTheme = "dark"
@@ -75,4 +69,4 @@ theme = "PaperMod"
 
 [privacy]
   [privacy.youtube]
-    privacyEnhanced = true
+  privacyEnhanced = true

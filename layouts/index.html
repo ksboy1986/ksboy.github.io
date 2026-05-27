@@ -1,49 +1,47 @@
 {{ define "main" }}
-<main class="main">
-    <div class="container">
-        <header class="home-header">
-            <h1 class="home-title">{{ .Site.Title }}</h1>
-            {{- with .Site.Params.author }}
-            <p class="home-subtitle">{{ .name }}</p>
-            {{- end }}
-        </header>
 
-        {{- if .Site.Params.showTaxonomyList }}
-        <section class="taxonomy-list">
-            <h2 class="taxonomy-header">{{ .Site.Params.taxonomyCardHeader | default "分类" }}</h2>
-            <div class="taxonomy-grid">
-                {{- $categories := .Site.Taxonomies.categories }}
-                {{- if gt (len $categories) 0 }}
-                {{- range $name, $taxonomy := $categories }}
-                {{- if gt (len $taxonomy) 0 }}
-                <a href="{{ printf "/categories/%s" $name | relLangURL }}" class="taxonomy-card">
-                    <span class="taxonomy-name">{{ $name }}</span>
-                    <span class="taxonomy-count">{{ len $taxonomy }}</span>
-                </a>
-                {{- end }}
-                {{- end }}
-                {{- end }}
-            </div>
-        </section>
-        {{- end }}
+<!-- Hero Section -->
+<div class="hero">
+  <div class="hero-content">
+    <h1 class="hero-title">{{ site.Title }}</h1>
+    <p class="hero-subtitle">记录技术实践，分享工程思考</p>
+  </div>
+</div>
 
-        <section class="post-list">
-            {{- range first 10 .Site.RegularPages }}
-            <article class="post-item">
-                <h2 class="post-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
-                <div class="post-meta">
-                    <time>{{ .Date.Format "2006-01-02" }}</time>
-                    {{- if .Params.categories }}
-                    <span class="categories">
-                        {{- range .Params.categories }}
-                        <a href="{{ printf "/categories/%s" . | relLangURL }}">{{ . }}</a>
-                        {{- end }}
-                    </span>
-                    {{- end }}
-                </div>
-            </article>
-            {{- end }}
-        </section>
+<!-- Article List -->
+{{- $pages := where site.RegularPages "Type" "in" site.Params.mainSections }}
+{{- $pages = where $pages "Params.hiddenInHomeList" "!=" "true" }}
+{{- $paginator := .Paginate $pages }}
+
+<div class="post-list home-list">
+{{- range $paginator.Pages }}
+  <article class="post-entry">
+    <header class="entry-header">
+      <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+    </header>
+    <div class="entry-content">
+      <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
     </div>
-</main>
+    <footer class="entry-meta">
+      <time>{{ .Date.Format "2006-01-02" }}</time>
+    </footer>
+  </article>
+{{- end }}
+</div>
+
+<!-- Pagination -->
+{{- if gt $paginator.TotalPages 1 }}
+<footer class="page-footer">
+  <nav class="pagination">
+    {{- if $paginator.HasPrev }}
+    <a class="prev" href="{{ $paginator.Prev.URL | absURL }}">«&nbsp;上一页</a>
+    {{- end }}
+    <span class="page-info">{{ $paginator.PageNumber }} / {{ $paginator.TotalPages }}</span>
+    {{- if $paginator.HasNext }}
+    <a class="next" href="{{ $paginator.Next.URL | absURL }}">下一页&nbsp;»</a>
+    {{- end }}
+  </nav>
+</footer>
+{{- end }}
+
 {{ end }}
