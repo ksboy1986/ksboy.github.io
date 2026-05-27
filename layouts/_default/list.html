@@ -1,0 +1,33 @@
+{{- define "main" }}
+
+{{- if (and site.Params.profileMode.enabled .IsHome) }}
+{{- partial "index_profile.html" . }}
+{{- else }}
+
+{{- if not .IsHome | and .Title }}
+<header class="page-header">
+  <h1>{{ .Title }}</h1>
+</header>
+{{- end }}
+
+{{- if .Content }}
+<div class="post-content md-content">
+  {{ .Content }}
+</div>
+{{- end }}
+
+{{- $pages := where .Site.RegularPages "Section" "posts" }}
+
+{{- range $pages }}
+<article class="post-entry">
+  <header class="entry-header">
+    <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+  </header>
+  <div class="entry-meta">
+    <time>{{ .Date.Format "2006-01-02" }}</time>
+  </div>
+</article>
+{{- end }}
+
+{{- end }}
+{{- end }}

@@ -1,0 +1,9 @@
+{{- $scratch := newScratch }}
+
+{{- if not .Date.IsZero -}}
+    {{- $scratch.Add "meta" (slice (printf "<span>%s</span>" (.Date | time.Format "2006-01-02 15:04"))) }}
+{{- end }}
+
+{{- with ($scratch.Get "meta") }}
+    {{- delimit . "&nbsp;·&nbsp;" | safeHTML -}}
+{{- end -}}

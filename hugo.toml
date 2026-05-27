@@ -1,18 +1,60 @@
 baseURL = "https://www.chaoyuewang.cn/"
 languageCode = "zh-cn"
-title = "潮越网"
+title = "超越网"
 theme = "PaperMod"
+
+# 分类系统配置
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+  series = "series"
+
+# 导航菜单配置
+[[menu.main]]
+  identifier = "home"
+  name = "首页"
+  url = "/"
+  weight = 5
+
+[[menu.main]]
+  identifier = "cat-infra"
+  name = "AI 基础设施"
+  url = "/categories/infra/"
+  weight = 10
+
+[[menu.main]]
+  identifier = "cat-ops"
+  name = "运维实践"
+  url = "/categories/ops/"
+  weight = 20
+
+[[menu.main]]
+  identifier = "cat-tools"
+  name = "工具评测"
+  url = "/categories/tools/"
+  weight = 30
+
+[[menu.main]]
+  identifier = "cat-meta"
+  name = "日常随笔"
+  url = "/categories/meta/"
+  weight = 40
 
 [params]
   mode = "dark"
   defaultTheme = "dark"
+  showReadingTime = true
   ShowShareButtons = false
-  ShowReadingTime = true
-  disableSpecial1stPost = true
+  ShowPostNavLinks = true
   ShowBreadCrumbs = true
   ShowCodeCopyButtons = true
   ShowRssButtonInSectionTermList = true
   ShowFullTextinRSS = true
+  showTaxonomyList = true
+  taxonomyCardHeader = "分类"
+  ShowToc = true
+  TocOpen = true
+  comments = false
 
 [params.author]
   name = "ksboy"
@@ -21,16 +63,10 @@ theme = "PaperMod"
 [outputs]
   home = ["HTML", "RSS"]
 
-[taxonomies]
-  tag = "tags"
-  category = "categories"
-  series = "series"
-
-[[menu.main]]
-name = "分类"
-pageRef = "categories"
-weight = 3
+[markup]
+  [markup.highlight]
+    noClasses = false
 
 [privacy]
   [privacy.youtube]
-    privacyEnhanced = true
+  privacyEnhanced = true
