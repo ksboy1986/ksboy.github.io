@@ -1,11 +1,16 @@
-/* 导航菜单右对齐，与下方内容区域右边缘对齐 */
-.header-nav .menu {
-    margin-right: calc((100% - var(--content-width)) / 2 + var(--gap));
+/* 导航菜单靠左，与 logo 并排显示 */
+.header-nav {
+    justify-content: flex-start;
 }
 
-/* 确保菜单项与内容右边缘对齐 */
+/* Logo 和菜单之间的间距 */
+.header-nav .logo {
+    margin-right: 2rem;
+}
+
+/* 确保与下方内容左边缘对齐 */
 @media (min-width: 1200px) {
-    .header-nav .menu {
-        margin-right: calc((100% - 850px) / 2 + var(--gap));
+    .header-nav {
+        padding-left: calc((100% - 850px) / 2);
     }
 }
