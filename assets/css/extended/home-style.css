@@ -5,6 +5,9 @@
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   margin-bottom: 2rem;
   border-radius: 8px;
+  max-width: 850px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hero-content {
