@@ -1,11 +1,17 @@
 baseURL = "https://www.chaoyuewang.cn/"
-title = "超越网"
+languageCode = "zh-cn"
+title = "潮越网"
 theme = "PaperMod"
+
+[module]
+  [[module.imports]]
+    path = "github.com/adityatelange/hugo-PaperMod"
 
 # 分类系统配置
 [taxonomies]
   category = "categories"
   tag = "tags"
+  series = "series"
 
 # 导航菜单配置
 [[menu.main]]
@@ -21,23 +27,33 @@ theme = "PaperMod"
   weight = 20
 
 [params]
-  mainSections = ["posts"]
-  tocPosition = "right"
+  mode = "dark"
   defaultTheme = "dark"
+  tocPosition = "right"
   showReadingTime = true
-  ShowShareButtons = true
+  ShowShareButtons = false
   ShowPostNavLinks = true
   ShowBreadCrumbs = true
   ShowCodeCopyButtons = true
-  ShowRssButtonInSectionMenu = true
+  ShowRssButtonInSectionTermList = true
   ShowFullTextinRSS = true
+  showTaxonomyList = true
+  taxonomyCardHeader = "分类"
   ShowToc = true
   TocOpen = true
   comments = false
 
+[params.author]
+  name = "ksboy"
+  link = "https://www.chaoyuewang.cn/"
+
 [outputs]
-  home = ["HTML", "RSS", "JSON"]
+  home = ["HTML", "RSS"]
 
 [markup]
   [markup.highlight]
     noClasses = false
+
+[privacy]
+  [privacy.youtube]
+    privacyEnhanced = true

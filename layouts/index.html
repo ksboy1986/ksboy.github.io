@@ -1,0 +1,49 @@
+{{ define "main" }}
+<main class="main">
+    <div class="container">
+        <header class="home-header">
+            <h1 class="home-title">{{ .Site.Title }}</h1>
+            {{- with .Site.Params.author }}
+            <p class="home-subtitle">{{ .name }}</p>
+            {{- end }}
+        </header>
+
+        {{- if .Site.Params.showTaxonomyList }}
+        <section class="taxonomy-list">
+            <h2 class="taxonomy-header">{{ .Site.Params.taxonomyCardHeader | default "分类" }}</h2>
+            <div class="taxonomy-grid">
+                {{- $categories := .Site.Taxonomies.categories }}
+                {{- if gt (len $categories) 0 }}
+                {{- range $name, $taxonomy := $categories }}
+                {{- if gt (len $taxonomy) 0 }}
+                <a href="{{ printf "/categories/%s" $name | relLangURL }}" class="taxonomy-card">
+                    <span class="taxonomy-name">{{ $name }}</span>
+                    <span class="taxonomy-count">{{ len $taxonomy }}</span>
+                </a>
+                {{- end }}
+                {{- end }}
+                {{- end }}
+            </div>
+        </section>
+        {{- end }}
+
+        <section class="post-list">
+            {{- range first 10 .Site.RegularPages }}
+            <article class="post-item">
+                <h2 class="post-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+                <div class="post-meta">
+                    <time>{{ .Date.Format "2006-01-02" }}</time>
+                    {{- if .Params.categories }}
+                    <span class="categories">
+                        {{- range .Params.categories }}
+                        <a href="{{ printf "/categories/%s" . | relLangURL }}">{{ . }}</a>
+                        {{- end }}
+                    </span>
+                    {{- end }}
+                </div>
+            </article>
+            {{- end }}
+        </section>
+    </div>
+</main>
+{{ end }}
