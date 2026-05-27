@@ -1,0 +1,11 @@
+/* 导航菜单右对齐，与下方内容区域右边缘对齐 */
+.header-nav .menu {
+    margin-right: calc((100% - var(--content-width)) / 2 + var(--gap));
+}
+
+/* 确保菜单项与内容右边缘对齐 */
+@media (min-width: 1200px) {
+    .header-nav .menu {
+        margin-right: calc((100% - 850px) / 2 + var(--gap));
+    }
+}
