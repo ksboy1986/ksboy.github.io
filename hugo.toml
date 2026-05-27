@@ -9,18 +9,36 @@ theme = "PaperMod"
   tag = "tags"
   series = "series"
 
-# 导航菜单配置
+# 导航菜单配置 - 分类直接显示在顶部
 [[menu.main]]
-  identifier = "categories"
-  name = "分类"
-  url = "/categories/"
+  identifier = "infra"
+  name = "AI 基础设施"
+  url = "/categories/infra/"
   weight = 10
+
+[[menu.main]]
+  identifier = "ops"
+  name = "运维实践"
+  url = "/categories/ops/"
+  weight = 20
+
+[[menu.main]]
+  identifier = "tools"
+  name = "工具评测"
+  url = "/categories/tools/"
+  weight = 30
+
+[[menu.main]]
+  identifier = "meta"
+  name = "日常随笔"
+  url = "/categories/meta/"
+  weight = 40
 
 [[menu.main]]
   identifier = "tags"
   name = "标签"
   url = "/tags/"
-  weight = 20
+  weight = 50
 
 [params]
   mode = "dark"
