@@ -1,0 +1,50 @@
+{{- define "main" }}
+
+{{- if .Data.Term }}
+<!-- 分类详情页面 -->
+<header class="page-header">
+  {{- partial "breadcrumbs.html" . }}
+  <h1>{{ .Title }}</h1>
+</header>
+
+{{- $pages := .RegularPages }}
+{{- if and (gt (len $pages) 0) }}
+<div class="post-list">
+  {{- range $pages }}
+  <article class="post-entry">
+    <header class="entry-header">
+      <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+    </header>
+    <div class="entry-meta">
+      <time>{{ .Date.Format "2006-01-02" }}</time>
+      {{- with .Params.categories }}
+      <span class="categories">
+        {{- range . }}
+        <a href="{{ "/categories/" | relLangURL }}{{ . | urlize | lower }}/">{{ . }}</a>
+        {{- end }}
+      </span>
+      {{- end }}
+    </div>
+  </article>
+  {{- end }}
+</div>
+{{- else }}
+<p>暂无文章</p>
+{{- end }}
+{{- else }}
+<!-- 分类列表页面 -->
+<header class="page-header">
+  <h1>分类</h1>
+</header>
+
+<div class="taxonomy-list">
+  {{- range .Site.Taxonomies.categories }}
+  <article class="taxonomy-entry">
+    <h2><a href="{{ .Page.Permalink }}">{{ .Page.Title }}</a></h2>
+    <p>{{ .Count }} 篇文章</p>
+  </article>
+  {{- end }}
+</div>
+{{- end }}
+
+{{- end }}{{/* end main */}}

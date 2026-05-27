@@ -1,0 +1,135 @@
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding: 4rem 1rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  max-width: 850px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: #a0a0a0;
+  font-weight: 300;
+}
+
+/* Home Article List */
+.home-list {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.home-list .post-entry {
+  padding: 0;
+  border-bottom: 1px solid #2a2a4a;
+  transition: transform 0.2s ease;
+}
+
+.home-list .post-entry:hover {
+  transform: translateX(4px);
+}
+
+.home-list .post-entry-link {
+  display: block;
+  padding: 2rem 0;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.home-list .post-entry:hover .post-entry-link {
+  color: inherit;
+}
+
+.home-list .entry-header h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.home-list .entry-header h2:hover {
+  color: #4a9eff;
+}
+
+.home-list .entry-content p {
+  color: #888;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.home-list .entry-meta {
+  font-size: 0.85rem;
+  color: #666;
+  font-family: monospace;
+}
+
+/* Pagination */
+.page-footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-top: 1rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination a {
+  color: #4a9eff;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid #2a2a4a;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.pagination a:hover {
+  background: #2a2a4a;
+  border-color: #4a9eff;
+}
+
+.page-info {
+  color: #666;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero {
+    padding: 2.5rem 1rem;
+  }
+  .hero-title {
+    font-size: 1.8rem;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  .home-list .post-entry-link {
+    padding: 1.5rem 0;
+  }
+  .home-list .entry-header h2 {
+    font-size: 1.2rem;
+  }
+}

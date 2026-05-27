@@ -1,0 +1,68 @@
+/* TOC 右侧固定布局 */
+.post-body {
+    display: block;
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.post-content {
+    width: 100%;
+}
+
+.toc-sidebar {
+    position: fixed;
+    right: 60px;
+    top: 100px;
+    width: 310px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.toc-sidebar details.toc {
+    margin-bottom: 0;
+    font-size: 12px;
+}
+
+.toc-sidebar details.toc summary {
+    padding: 0.3rem 1rem;
+    font-size: 13px;
+}
+
+.toc-sidebar details.toc .inner {
+    margin: 0 1rem;
+    padding-bottom: 0.5rem;
+}
+
+.toc-sidebar details.toc .inner a {
+    font-size: 11px;
+    color: var(--secondary);
+}
+
+.toc-sidebar details.toc .inner a:hover {
+    color: var(--content);
+}
+
+.toc-sidebar details.toc li ul {
+    margin-inline-start: 1rem;
+}
+
+/* 小屏幕响应式：TOC 回到上方 */
+@media (max-width: 1200px) {
+    .toc-sidebar {
+        position: static;
+        width: 100%;
+        max-height: auto;
+        margin: 20px auto;
+        max-width: 600px;
+    }
+}
+
+/* 手机端：隐藏TOC */
+@media (max-width: 768px) {
+    .toc-sidebar {
+        display: none;
+    }
+}
+
