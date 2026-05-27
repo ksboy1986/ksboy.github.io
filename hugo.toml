@@ -43,7 +43,6 @@ theme = "PaperMod"
 [params]
   mode = "dark"
   defaultTheme = "dark"
-  tocPosition = "right"
   showReadingTime = true
   ShowShareButtons = false
   ShowPostNavLinks = true
