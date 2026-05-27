@@ -11,25 +11,25 @@ theme = "PaperMod"
 
 # 导航菜单配置 - 分类直接显示在顶部
 [[menu.main]]
-  identifier = "infra"
+  identifier = "cat-infra"
   name = "AI 基础设施"
   url = "/categories/infra/"
   weight = 10
 
 [[menu.main]]
-  identifier = "ops"
+  identifier = "cat-ops"
   name = "运维实践"
   url = "/categories/ops/"
   weight = 20
 
 [[menu.main]]
-  identifier = "tools"
+  identifier = "cat-tools"
   name = "工具评测"
   url = "/categories/tools/"
   weight = 30
 
 [[menu.main]]
-  identifier = "meta"
+  identifier = "cat-meta"
   name = "日常随笔"
   url = "/categories/meta/"
   weight = 40
