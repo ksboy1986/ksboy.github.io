@@ -10,7 +10,7 @@ tags:
   - IOC
   - YARA
 categories:
-  - 安全研究
+  - ops
 ---
 
 ## 前言
