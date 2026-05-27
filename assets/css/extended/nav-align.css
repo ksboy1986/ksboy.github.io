@@ -1,16 +1,23 @@
-/* 导航菜单靠左，与 logo 并排显示 */
+/* 导航栏：logo 和菜单在同一行 */
 .header-nav {
-    justify-content: flex-start;
+    justify-content: space-between;
 }
 
 /* Logo 和菜单之间的间距 */
 .header-nav .logo {
-    margin-right: 2rem;
+    margin-right: 1rem;
 }
 
-/* 确保与下方内容左边缘对齐 */
+/* 菜单项 */
+.header-nav .menu {
+    display: flex;
+    align-items: center;
+}
+
+/* 确保与下方内容区域对齐 */
 @media (min-width: 1200px) {
     .header-nav {
-        padding-left: calc((100% - 850px) / 2);
+        max-width: 850px;
+        margin: 0 auto;
     }
 }
