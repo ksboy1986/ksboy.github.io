@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>AI 基础设施 on 超越网</title><link>https://www.chaoyuewang.cn/categories/infra/</link><description>Recent content in AI 基础设施 on 超越网</description><generator>Hugo</generator><language>zh-cn</language><lastBuildDate>Tue, 26 May 2026 12:30:00 +0800</lastBuildDate><atom:link href="https://www.chaoyuewang.cn/categories/infra/index.xml" rel="self" type="application/rss+xml"/><item><title>欢迎来到潮越网</title><link>https://www.chaoyuewang.cn/posts/welcome/</link><pubDate>Tue, 26 May 2026 12:30:00 +0800</pubDate><guid>https://www.chaoyuewang.cn/posts/welcome/</guid><description>&lt;p&gt;欢迎来到 &lt;strong&gt;潮越网&lt;/strong&gt;（www.chaoyuewang.cn）。&lt;/p&gt;
+&lt;p&gt;这是博客的第一篇文章，记录建站之初的点滴。&lt;/p&gt;
+&lt;h2 id="技术栈"&gt;技术栈&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;项目&lt;/th&gt;
+&lt;th&gt;选择&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;静态站点生成器&lt;/td&gt;
+&lt;td&gt;Hugo (extended)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;主题&lt;/td&gt;
+&lt;td&gt;PaperMod&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;部署&lt;/td&gt;
+&lt;td&gt;GitHub Actions&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;域名&lt;/td&gt;
+&lt;td&gt;&lt;a href="https://www.chaoyuewang.cn"&gt;www.chaoyuewang.cn&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id="关于"&gt;关于&lt;/h2&gt;
+&lt;p&gt;这里将分享技术笔记、项目复盘和生活随笔。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;em&gt;2026-05-26 · 潮越网&lt;/em&gt;&lt;/p&gt;</description><content:encoded><![CDATA[<p>欢迎来到 <strong>潮越网</strong>（www.chaoyuewang.cn）。</p>
+<p>这是博客的第一篇文章，记录建站之初的点滴。</p>
+<h2 id="技术栈">技术栈</h2>
+<table>
+  <thead>
+      <tr>
+          <th>项目</th>
+          <th>选择</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>静态站点生成器</td>
+          <td>Hugo (extended)</td>
+      </tr>
+      <tr>
+          <td>主题</td>
+          <td>PaperMod</td>
+      </tr>
+      <tr>
+          <td>部署</td>
+          <td>GitHub Actions</td>
+      </tr>
+      <tr>
+          <td>域名</td>
+          <td><a href="https://www.chaoyuewang.cn">www.chaoyuewang.cn</a></td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="关于">关于</h2>
+<p>这里将分享技术笔记、项目复盘和生活随笔。</p>
+<hr>
+<p><em>2026-05-26 · 潮越网</em></p>
+]]></content:encoded></item></channel></rss>

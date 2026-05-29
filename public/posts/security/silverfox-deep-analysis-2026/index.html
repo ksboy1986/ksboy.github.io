@@ -1,0 +1,568 @@
+<!doctype html><html lang=en dir=auto data-theme=dark><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=robots content="index, follow"><title>银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战 | 超越网</title><meta name=keywords content="安全,银狐,感染链,Go木马,IOC,YARA"><meta name=description content='前言
+银狐病毒（SilverFox）是2022年9月由腾讯安全、360、微步在线三家厂商几乎同时独立发现的针对中国企业的恶意软件家族。与传统的C/C++木马不同，银狐使用 Go语言编写，这带来了独特的检测挑战和特征。
+银狐的目标明确：中国企业的财务部门。攻击手法成熟：钓鱼邮件、即时通讯、假冒软件更新。持久化手段多样：注册表、WMI、计划任务、AppInit_DLLs。防御规避专业：篡改Windows Defender排除项、进程注入、随机进程名。
+本文基于开源检测工具源代码分析，提供：
+
+银狐的完整感染链分析
+Go语言木马的技术特征
+增强版YARA规则（覆盖行为特征）
+可直接使用的检测脚本
+
+
+声明: 本文IOC来自开源检测工具源代码，最新IOC请从官方查杀工具获取。
+
+
+一、银狐病毒技术特征
+1.1 Go语言木马的特征
+银狐使用Go语言编写，具有以下可检测特征：
+
+  
+      
+          特征类型
+          检测方法
+          说明
+      
+  
+  
+      
+          Go运行时库
+          内存扫描/字符串分析
+          Go程序加载runtime.dll、go.dll等运行时库
+      
+      
+          Go二进制结构
+          PE头分析
+          Go编译的二进制文件有特定的PE节区（如.go.buildinfo）
+      
+      
+          Go异常处理
+          行为分析
+          Go的panic/recover机制与C++异常处理不同
+      
+      
+          Go协程特征
+          线程行为
+          Go的Goroutine调度器会产生特定的线程创建模式
+      
+  
+
+1.2 银狐的行为特征
+根据开源检测工具分析，银狐具有以下行为：
+1. 进程注入：注入 svchost.exe 等系统进程
+2. 注册表持久化：HKCU/HKLM Run键 + AppInit_DLLs
+3. WMI事件订阅：__EventFilter + __EventConsumer + __FilterToConsumerBinding
+4. 计划任务：创建 Task1 或 SilverFox 相关任务
+5. Windows Defender排除：篡改排除路径以规避检测
+6. 文件伪装：使用 svchost64.exe、随机进程名（pXDc9LSz.exe）
+
+二、感染链分析
+银狐的完整攻击链如下：
+┌─────────────────────────────────────────────────────────────────────┐
+│                        银狐感染链                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  阶段1: 初始访问                                                    │
+│  ├── 钓鱼邮件（伪装成发票、合同）                                    │
+│  ├── 即时通讯（微信/钉钉发送恶意文件）                               │
+│  └── 假冒软件更新（财务软件、OA系统）                                │
+│                                                                     │
+│  阶段2: 执行                                                        │
+│  ├── 用户双击恶意附件                                              │
+│  ├── 恶意宏代码执行                                                 │
+│  └── 社会工程学诱导（"文件恢复指南"等）                              │
+│                                                                     │
+│  阶段3: 持久化                                                      │
+│  ├── 注册表 Run 键写入                                               │
+│  ├── WMI 事件订阅（__EventFilter）                                  │
+│  ├── 计划任务创建                                                   │
+│  └── AppInit_DLLs 注入                                              │
+│                                                                     │
+│  阶段4: 防御规避                                                    │
+│  ├── Windows Defender 排除项篡改                                    │
+│  ├── 进程注入（svchost.exe）                                        │
+│  ├── 随机进程名生成                                                 │
+│  └── 文件伪装（svchost64.exe）                                      │
+│                                                                     │
+│  阶段5: C2通信                                                      │
+│  ├── HTTP/HTTPS 心跳包                                              │
+│  ├── DNS 查询（可能使用DGA）                                        │
+│  └── 加密通信（TLS/自定义协议）                                     │
+│                                                                     │
+│  阶段6: 数据窃取                                                    │
+│  ├── 浏览器凭证窃取                                                 │
+│  ├── 财务软件凭证窃取                                               │
+│  └── 即时通讯凭证窃取                                               │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+2.1 各阶段检测要点
+
+  
+      
+          阶段
+          检测重点
+          检测工具
+      
+  
+  
+      
+          初始访问
+          邮件附件、钓鱼链接
+          邮件网关、URL过滤
+      
+      
+          执行
+          可疑进程启动
+          EDR、进程监控
+      
+      
+          持久化
+          注册表、WMI、计划任务
+          注册表监控、WMI监控
+      
+      
+          防御规避
+          Defender排除项、进程注入
+          安全配置审计、内存扫描
+      
+      
+          C2通信
+          异常网络连接、DNS查询
+          网络流量分析、DNS监控
+      
+      
+          数据窃取
+          凭证访问、文件外传
+          DLP、凭证监控
+      
+  
+
+
+三、IOC 列表（来自开源工具）
+以下IOC来自 zseagate/SilverFox-Scanner 和 das-secbox/silverfox_scanner 的源代码。'><meta name=author content="map[link:https://www.chaoyuewang.cn/ name:ksboy]"><link rel=canonical href=https://www.chaoyuewang.cn/posts/security/silverfox-deep-analysis-2026/><link crossorigin=anonymous href=/assets/css/stylesheet.47e71e382033970f65a4921080917c23d5d112777f3c93fb456b32795a3b9a4a.css integrity="sha256-R+ceOCAzlw9lpJIQgJF8I9XREnd/PJP7RWsyeVo7mko=" rel="preload stylesheet" as=style><link rel=icon href=https://www.chaoyuewang.cn/favicon.ico><link rel=icon type=image/png sizes=16x16 href=https://www.chaoyuewang.cn/favicon-16x16.png><link rel=icon type=image/png sizes=32x32 href=https://www.chaoyuewang.cn/favicon-32x32.png><link rel=apple-touch-icon href=https://www.chaoyuewang.cn/apple-touch-icon.png><link rel=mask-icon href=https://www.chaoyuewang.cn/safari-pinned-tab.svg><meta name=theme-color content="#2e2e33"><meta name=msapplication-TileColor content="#2e2e33"><link rel=alternate hreflang=en href=https://www.chaoyuewang.cn/posts/security/silverfox-deep-analysis-2026/><noscript><style>#theme-toggle,.top-link{display:none}</style></noscript><script>localStorage.getItem("pref-theme")==="light"&&(document.querySelector("html").dataset.theme="light")</script><meta property="og:url" content="https://www.chaoyuewang.cn/posts/security/silverfox-deep-analysis-2026/"><meta property="og:site_name" content="超越网"><meta property="og:title" content="银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战"><meta property="og:description" content='前言 银狐病毒（SilverFox）是2022年9月由腾讯安全、360、微步在线三家厂商几乎同时独立发现的针对中国企业的恶意软件家族。与传统的C/C++木马不同，银狐使用 Go语言编写，这带来了独特的检测挑战和特征。
+银狐的目标明确：中国企业的财务部门。攻击手法成熟：钓鱼邮件、即时通讯、假冒软件更新。持久化手段多样：注册表、WMI、计划任务、AppInit_DLLs。防御规避专业：篡改Windows Defender排除项、进程注入、随机进程名。
+本文基于开源检测工具源代码分析，提供：
+银狐的完整感染链分析 Go语言木马的技术特征 增强版YARA规则（覆盖行为特征） 可直接使用的检测脚本 声明: 本文IOC来自开源检测工具源代码，最新IOC请从官方查杀工具获取。
+一、银狐病毒技术特征 1.1 Go语言木马的特征 银狐使用Go语言编写，具有以下可检测特征：
+特征类型 检测方法 说明 Go运行时库 内存扫描/字符串分析 Go程序加载runtime.dll、go.dll等运行时库 Go二进制结构 PE头分析 Go编译的二进制文件有特定的PE节区（如.go.buildinfo） Go异常处理 行为分析 Go的panic/recover机制与C++异常处理不同 Go协程特征 线程行为 Go的Goroutine调度器会产生特定的线程创建模式 1.2 银狐的行为特征 根据开源检测工具分析，银狐具有以下行为：
+1. 进程注入：注入 svchost.exe 等系统进程 2. 注册表持久化：HKCU/HKLM Run键 + AppInit_DLLs 3. WMI事件订阅：__EventFilter + __EventConsumer + __FilterToConsumerBinding 4. 计划任务：创建 Task1 或 SilverFox 相关任务 5. Windows Defender排除：篡改排除路径以规避检测 6. 文件伪装：使用 svchost64.exe、随机进程名（pXDc9LSz.exe） 二、感染链分析 银狐的完整攻击链如下：
+┌─────────────────────────────────────────────────────────────────────┐ │ 银狐感染链 │ ├─────────────────────────────────────────────────────────────────────┤ │ │ │ 阶段1: 初始访问 │ │ ├── 钓鱼邮件（伪装成发票、合同） │ │ ├── 即时通讯（微信/钉钉发送恶意文件） │ │ └── 假冒软件更新（财务软件、OA系统） │ │ │ │ 阶段2: 执行 │ │ ├── 用户双击恶意附件 │ │ ├── 恶意宏代码执行 │ │ └── 社会工程学诱导（"文件恢复指南"等） │ │ │ │ 阶段3: 持久化 │ │ ├── 注册表 Run 键写入 │ │ ├── WMI 事件订阅（__EventFilter） │ │ ├── 计划任务创建 │ │ └── AppInit_DLLs 注入 │ │ │ │ 阶段4: 防御规避 │ │ ├── Windows Defender 排除项篡改 │ │ ├── 进程注入（svchost.exe） │ │ ├── 随机进程名生成 │ │ └── 文件伪装（svchost64.exe） │ │ │ │ 阶段5: C2通信 │ │ ├── HTTP/HTTPS 心跳包 │ │ ├── DNS 查询（可能使用DGA） │ │ └── 加密通信（TLS/自定义协议） │ │ │ │ 阶段6: 数据窃取 │ │ ├── 浏览器凭证窃取 │ │ ├── 财务软件凭证窃取 │ │ └── 即时通讯凭证窃取 │ │ │ └─────────────────────────────────────────────────────────────────────┘ 2.1 各阶段检测要点 阶段 检测重点 检测工具 初始访问 邮件附件、钓鱼链接 邮件网关、URL过滤 执行 可疑进程启动 EDR、进程监控 持久化 注册表、WMI、计划任务 注册表监控、WMI监控 防御规避 Defender排除项、进程注入 安全配置审计、内存扫描 C2通信 异常网络连接、DNS查询 网络流量分析、DNS监控 数据窃取 凭证访问、文件外传 DLP、凭证监控 三、IOC 列表（来自开源工具） 以下IOC来自 zseagate/SilverFox-Scanner 和 das-secbox/silverfox_scanner 的源代码。'><meta property="og:locale" content="zh_cn"><meta property="og:type" content="article"><meta property="article:section" content="posts"><meta property="article:published_time" content="2026-05-25T00:00:00+00:00"><meta property="article:modified_time" content="2026-05-25T00:00:00+00:00"><meta property="article:tag" content="安全"><meta property="article:tag" content="银狐"><meta property="article:tag" content="感染链"><meta property="article:tag" content="Go木马"><meta property="article:tag" content="IOC"><meta property="article:tag" content="YARA"><meta name=twitter:card content="summary"><meta name=twitter:title content="银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战"><meta name=twitter:description content='前言 银狐病毒（SilverFox）是2022年9月由腾讯安全、360、微步在线三家厂商几乎同时独立发现的针对中国企业的恶意软件家族。与传统的C/C++木马不同，银狐使用 Go语言编写，这带来了独特的检测挑战和特征。
+银狐的目标明确：中国企业的财务部门。攻击手法成熟：钓鱼邮件、即时通讯、假冒软件更新。持久化手段多样：注册表、WMI、计划任务、AppInit_DLLs。防御规避专业：篡改Windows Defender排除项、进程注入、随机进程名。
+本文基于开源检测工具源代码分析，提供：
+银狐的完整感染链分析 Go语言木马的技术特征 增强版YARA规则（覆盖行为特征） 可直接使用的检测脚本 声明: 本文IOC来自开源检测工具源代码，最新IOC请从官方查杀工具获取。
+一、银狐病毒技术特征 1.1 Go语言木马的特征 银狐使用Go语言编写，具有以下可检测特征：
+特征类型 检测方法 说明 Go运行时库 内存扫描/字符串分析 Go程序加载runtime.dll、go.dll等运行时库 Go二进制结构 PE头分析 Go编译的二进制文件有特定的PE节区（如.go.buildinfo） Go异常处理 行为分析 Go的panic/recover机制与C++异常处理不同 Go协程特征 线程行为 Go的Goroutine调度器会产生特定的线程创建模式 1.2 银狐的行为特征 根据开源检测工具分析，银狐具有以下行为：
+1. 进程注入：注入 svchost.exe 等系统进程 2. 注册表持久化：HKCU/HKLM Run键 + AppInit_DLLs 3. WMI事件订阅：__EventFilter + __EventConsumer + __FilterToConsumerBinding 4. 计划任务：创建 Task1 或 SilverFox 相关任务 5. Windows Defender排除：篡改排除路径以规避检测 6. 文件伪装：使用 svchost64.exe、随机进程名（pXDc9LSz.exe） 二、感染链分析 银狐的完整攻击链如下：
+┌─────────────────────────────────────────────────────────────────────┐ │ 银狐感染链 │ ├─────────────────────────────────────────────────────────────────────┤ │ │ │ 阶段1: 初始访问 │ │ ├── 钓鱼邮件（伪装成发票、合同） │ │ ├── 即时通讯（微信/钉钉发送恶意文件） │ │ └── 假冒软件更新（财务软件、OA系统） │ │ │ │ 阶段2: 执行 │ │ ├── 用户双击恶意附件 │ │ ├── 恶意宏代码执行 │ │ └── 社会工程学诱导（"文件恢复指南"等） │ │ │ │ 阶段3: 持久化 │ │ ├── 注册表 Run 键写入 │ │ ├── WMI 事件订阅（__EventFilter） │ │ ├── 计划任务创建 │ │ └── AppInit_DLLs 注入 │ │ │ │ 阶段4: 防御规避 │ │ ├── Windows Defender 排除项篡改 │ │ ├── 进程注入（svchost.exe） │ │ ├── 随机进程名生成 │ │ └── 文件伪装（svchost64.exe） │ │ │ │ 阶段5: C2通信 │ │ ├── HTTP/HTTPS 心跳包 │ │ ├── DNS 查询（可能使用DGA） │ │ └── 加密通信（TLS/自定义协议） │ │ │ │ 阶段6: 数据窃取 │ │ ├── 浏览器凭证窃取 │ │ ├── 财务软件凭证窃取 │ │ └── 即时通讯凭证窃取 │ │ │ └─────────────────────────────────────────────────────────────────────┘ 2.1 各阶段检测要点 阶段 检测重点 检测工具 初始访问 邮件附件、钓鱼链接 邮件网关、URL过滤 执行 可疑进程启动 EDR、进程监控 持久化 注册表、WMI、计划任务 注册表监控、WMI监控 防御规避 Defender排除项、进程注入 安全配置审计、内存扫描 C2通信 异常网络连接、DNS查询 网络流量分析、DNS监控 数据窃取 凭证访问、文件外传 DLP、凭证监控 三、IOC 列表（来自开源工具） 以下IOC来自 zseagate/SilverFox-Scanner 和 das-secbox/silverfox_scanner 的源代码。'><script type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Posts","item":"https://www.chaoyuewang.cn/posts/"},{"@type":"ListItem","position":2,"name":"银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战","item":"https://www.chaoyuewang.cn/posts/security/silverfox-deep-analysis-2026/"}]}</script><script type=application/ld+json>{"@context":"https://schema.org","@type":"BlogPosting","headline":"银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战","name":"银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战","description":"前言 银狐病毒（SilverFox）是2022年9月由腾讯安全、360、微步在线三家厂商几乎同时独立发现的针对中国企业的恶意软件家族。与传统的C/C++木马不同，银狐使用 Go语言编写，这带来了独特的检测挑战和特征。\n银狐的目标明确：中国企业的财务部门。攻击手法成熟：钓鱼邮件、即时通讯、假冒软件更新。持久化手段多样：注册表、WMI、计划任务、AppInit_DLLs。防御规避专业：篡改Windows Defender排除项、进程注入、随机进程名。\n本文基于开源检测工具源代码分析，提供：\n银狐的完整感染链分析 Go语言木马的技术特征 增强版YARA规则（覆盖行为特征） 可直接使用的检测脚本 声明: 本文IOC来自开源检测工具源代码，最新IOC请从官方查杀工具获取。\n一、银狐病毒技术特征 1.1 Go语言木马的特征 银狐使用Go语言编写，具有以下可检测特征：\n特征类型 检测方法 说明 Go运行时库 内存扫描/字符串分析 Go程序加载runtime.dll、go.dll等运行时库 Go二进制结构 PE头分析 Go编译的二进制文件有特定的PE节区（如.go.buildinfo） Go异常处理 行为分析 Go的panic/recover机制与C++异常处理不同 Go协程特征 线程行为 Go的Goroutine调度器会产生特定的线程创建模式 1.2 银狐的行为特征 根据开源检测工具分析，银狐具有以下行为：\n1. 进程注入：注入 svchost.exe 等系统进程 2. 注册表持久化：HKCU/HKLM Run键 + AppInit_DLLs 3. WMI事件订阅：__EventFilter + __EventConsumer + __FilterToConsumerBinding 4. 计划任务：创建 Task1 或 SilverFox 相关任务 5. Windows Defender排除：篡改排除路径以规避检测 6. 文件伪装：使用 svchost64.exe、随机进程名（pXDc9LSz.exe） 二、感染链分析 银狐的完整攻击链如下：\n┌─────────────────────────────────────────────────────────────────────┐ │ 银狐感染链 │ ├─────────────────────────────────────────────────────────────────────┤ │ │ │ 阶段1: 初始访问 │ │ ├── 钓鱼邮件（伪装成发票、合同） │ │ ├── 即时通讯（微信/钉钉发送恶意文件） │ │ └── 假冒软件更新（财务软件、OA系统） │ │ │ │ 阶段2: 执行 │ │ ├── 用户双击恶意附件 │ │ ├── 恶意宏代码执行 │ │ └── 社会工程学诱导（\u0026#34;文件恢复指南\u0026#34;等） │ │ │ │ 阶段3: 持久化 │ │ ├── 注册表 Run 键写入 │ │ ├── WMI 事件订阅（__EventFilter） │ │ ├── 计划任务创建 │ │ └── AppInit_DLLs 注入 │ │ │ │ 阶段4: 防御规避 │ │ ├── Windows Defender 排除项篡改 │ │ ├── 进程注入（svchost.exe） │ │ ├── 随机进程名生成 │ │ └── 文件伪装（svchost64.exe） │ │ │ │ 阶段5: C2通信 │ │ ├── HTTP/HTTPS 心跳包 │ │ ├── DNS 查询（可能使用DGA） │ │ └── 加密通信（TLS/自定义协议） │ │ │ │ 阶段6: 数据窃取 │ │ ├── 浏览器凭证窃取 │ │ ├── 财务软件凭证窃取 │ │ └── 即时通讯凭证窃取 │ │ │ └─────────────────────────────────────────────────────────────────────┘ 2.1 各阶段检测要点 阶段 检测重点 检测工具 初始访问 邮件附件、钓鱼链接 邮件网关、URL过滤 执行 可疑进程启动 EDR、进程监控 持久化 注册表、WMI、计划任务 注册表监控、WMI监控 防御规避 Defender排除项、进程注入 安全配置审计、内存扫描 C2通信 异常网络连接、DNS查询 网络流量分析、DNS监控 数据窃取 凭证访问、文件外传 DLP、凭证监控 三、IOC 列表（来自开源工具） 以下IOC来自 zseagate/SilverFox-Scanner 和 das-secbox/silverfox_scanner 的源代码。\n","keywords":["安全","银狐","感染链","Go木马","IOC","YARA"],"articleBody":"前言 银狐病毒（SilverFox）是2022年9月由腾讯安全、360、微步在线三家厂商几乎同时独立发现的针对中国企业的恶意软件家族。与传统的C/C++木马不同，银狐使用 Go语言编写，这带来了独特的检测挑战和特征。\n银狐的目标明确：中国企业的财务部门。攻击手法成熟：钓鱼邮件、即时通讯、假冒软件更新。持久化手段多样：注册表、WMI、计划任务、AppInit_DLLs。防御规避专业：篡改Windows Defender排除项、进程注入、随机进程名。\n本文基于开源检测工具源代码分析，提供：\n银狐的完整感染链分析 Go语言木马的技术特征 增强版YARA规则（覆盖行为特征） 可直接使用的检测脚本 声明: 本文IOC来自开源检测工具源代码，最新IOC请从官方查杀工具获取。\n一、银狐病毒技术特征 1.1 Go语言木马的特征 银狐使用Go语言编写，具有以下可检测特征：\n特征类型 检测方法 说明 Go运行时库 内存扫描/字符串分析 Go程序加载runtime.dll、go.dll等运行时库 Go二进制结构 PE头分析 Go编译的二进制文件有特定的PE节区（如.go.buildinfo） Go异常处理 行为分析 Go的panic/recover机制与C++异常处理不同 Go协程特征 线程行为 Go的Goroutine调度器会产生特定的线程创建模式 1.2 银狐的行为特征 根据开源检测工具分析，银狐具有以下行为：\n1. 进程注入：注入 svchost.exe 等系统进程 2. 注册表持久化：HKCU/HKLM Run键 + AppInit_DLLs 3. WMI事件订阅：__EventFilter + __EventConsumer + __FilterToConsumerBinding 4. 计划任务：创建 Task1 或 SilverFox 相关任务 5. Windows Defender排除：篡改排除路径以规避检测 6. 文件伪装：使用 svchost64.exe、随机进程名（pXDc9LSz.exe） 二、感染链分析 银狐的完整攻击链如下：\n┌─────────────────────────────────────────────────────────────────────┐ │ 银狐感染链 │ ├─────────────────────────────────────────────────────────────────────┤ │ │ │ 阶段1: 初始访问 │ │ ├── 钓鱼邮件（伪装成发票、合同） │ │ ├── 即时通讯（微信/钉钉发送恶意文件） │ │ └── 假冒软件更新（财务软件、OA系统） │ │ │ │ 阶段2: 执行 │ │ ├── 用户双击恶意附件 │ │ ├── 恶意宏代码执行 │ │ └── 社会工程学诱导（\"文件恢复指南\"等） │ │ │ │ 阶段3: 持久化 │ │ ├── 注册表 Run 键写入 │ │ ├── WMI 事件订阅（__EventFilter） │ │ ├── 计划任务创建 │ │ └── AppInit_DLLs 注入 │ │ │ │ 阶段4: 防御规避 │ │ ├── Windows Defender 排除项篡改 │ │ ├── 进程注入（svchost.exe） │ │ ├── 随机进程名生成 │ │ └── 文件伪装（svchost64.exe） │ │ │ │ 阶段5: C2通信 │ │ ├── HTTP/HTTPS 心跳包 │ │ ├── DNS 查询（可能使用DGA） │ │ └── 加密通信（TLS/自定义协议） │ │ │ │ 阶段6: 数据窃取 │ │ ├── 浏览器凭证窃取 │ │ ├── 财务软件凭证窃取 │ │ └── 即时通讯凭证窃取 │ │ │ └─────────────────────────────────────────────────────────────────────┘ 2.1 各阶段检测要点 阶段 检测重点 检测工具 初始访问 邮件附件、钓鱼链接 邮件网关、URL过滤 执行 可疑进程启动 EDR、进程监控 持久化 注册表、WMI、计划任务 注册表监控、WMI监控 防御规避 Defender排除项、进程注入 安全配置审计、内存扫描 C2通信 异常网络连接、DNS查询 网络流量分析、DNS监控 数据窃取 凭证访问、文件外传 DLP、凭证监控 三、IOC 列表（来自开源工具） 以下IOC来自 zseagate/SilverFox-Scanner 和 das-secbox/silverfox_scanner 的源代码。\n3.1 恶意进程名 foxservice.exe xfolder32* svchost.exe # 注意：正常svchost在System32，异常路径的是恶意 *silverfox* pXDc9LSz.exe # 随机生成的进程名示例 pQpfOm.exe # 随机生成的进程名示例 svchost64.exe # 伪装进程 3.2 注册表持久化 HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows\\AppInit_DLLs HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders 3.3 WMI 持久化 __EventFilter __EventConsumer __FilterToConsumerBinding Namespace: root\\subscription 3.4 计划任务 Task1 SilverFox 3.5 恶意文件特征 *.silverfox *silverfox* foxservice svchost64.exe !!!文件恢复指南* 3.6 恶意文件路径 C:\\ProgramData\\xfolder32 C:\\Users\\Public\\Documents\\ C:\\Users\\$USERNAME\\AppData\\Local\\Temp\\ 3.7 Windows Defender 排除项 银狐常篡改Windows Defender排除路径以规避检测，需检查：\nGet-MpPreference | Select-Object -ExpandProperty ExclusionPath 四、检测脚本 4.1 Windows 检测（PowerShell） # 银狐病毒检测脚本 - Windows版本 # 来源: zseagate/SilverFox-Scanner Write-Host \"=== 银狐病毒检测 (Windows) ===\" -ForegroundColor Cyan # 1. 检查恶意进程 Write-Host \"`n[1/6] 检查可疑进程...\" -ForegroundColor Yellow $maliciousProcesses = @(\"foxservice.exe\", \"xfolder32*\", \"svchost.exe\", \"*silverfox*\", \"pXDc9LSz.exe\", \"pQpfOm.exe\", \"svchost64.exe\") $foundProcesses = Get-Process | Where-Object { $processName = $_.Name; $maliciousProcesses | Where-Object { $processName -like $_ } } if ($foundProcesses) { Write-Host \"发现可疑进程:\" -ForegroundColor Red $foundProcesses | Format-Table Id, Name, Path, StartTime -AutoSize } else { Write-Host \"未发现已知恶意进程\" -ForegroundColor Green } # 2. 检查注册表持久化项 Write-Host \"`n[2/6] 检查注册表持久化项...\" -ForegroundColor Yellow $runKeys = @( \"HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\", \"HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\", \"HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows\\AppInit_DLLs\", \"HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders\" ) foreach ($key in $runKeys) { Write-Host \"检查 $key...\" try { Get-ItemProperty -Path $key -ErrorAction Stop | Select-Object * | Format-List } catch { Write-Host \"无法读取该注册表项\" -ForegroundColor Gray } } # 3. 检查WMI事件订阅（银狐常用持久化方式） Write-Host \"`n[3/6] 检查WMI事件订阅...\" -ForegroundColor Yellow Get-WmiObject -Namespace root\\subscription -Class __EventFilter -ErrorAction SilentlyContinue | ForEach-Object { Write-Host \"发现WMI事件过滤器: $($_.Name)\" -ForegroundColor Red Write-Host \"查询语句: $($_.Query)\" } # 4. 检查计划任务 Write-Host \"`n[4/6] 检查计划任务...\" -ForegroundColor Yellow Get-ScheduledTask | Where-Object { $_.TaskName -like \"*Task1*\" -or $_.Description -like \"*SilverFox*\" } | Format-Table TaskName, State, Description -AutoSize # 5. 检查常见恶意文件路径 Write-Host \"`n[5/6] 扫描恶意文件路径...\" -ForegroundColor Yellow $scanPaths = @( \"C:\\ProgramData\\xfolder32\", \"C:\\Users\\Public\\Documents\\\", $env:TEMP, \"C:\\Users\\$env:USERNAME\\AppData\\Local\\Temp\" ) foreach ($path in $scanPaths) { if (Test-Path $path) { Write-Host \"扫描 $path...\" Get-ChildItem -Path $path -Recurse -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -match \"svchost64\\.exe|.*\\.silverfox|!!!文件恢复指南.*\" } | ForEach-Object { Write-Host \"发现可疑文件: $($_.FullName)\" -ForegroundColor Red } } } # 6. 检查Windows Defender排除项（银狐常篡改此配置） Write-Host \"`n[6/6] 检查Windows Defender排除路径...\" -ForegroundColor Yellow $exclusions = Get-MpPreference | Select-Object -ExpandProperty ExclusionPath if ($exclusions) { Write-Host \"发现排除路径:\" -ForegroundColor Red $exclusions | ForEach-Object { Write-Host $_ } } else { Write-Host \"未发现异常排除路径\" -ForegroundColor Green } Write-Host \"`n排查完成，若发现上述可疑项目，请立即断网并使用专杀工具清理\" -ForegroundColor Cyan 4.2 Linux 检测（Bash） #!/bin/bash # 银狐病毒检测脚本 - Linux版本 # 来源: zseagate/SilverFox-Scanner echo -e \"\\033[36m=== 银狐病毒检测 (Linux) ===\\033[0m\" # 1. 检查可疑进程 echo -e \"\\n\\033[33m[1/5] 检查可疑进程...\\033[0m\" ps aux | grep -iE \"silverfox|foxservice|svchost|minerd|xmrig\" | grep -v grep if [ $? -eq 0 ]; then echo -e \"\\033[31m发现可疑进程，请重点检查上述进程\\033[0m\" fi # 2. 检查开机启动项 echo -e \"\\n\\033[33m[2/5] 检查开机启动项...\\033[0m\" systemctl list-unit-files --type=service | grep -iE \"silverfox|malware|unknown\" crontab -l 2\u003e/dev/null | grep -iE \"curl|wget|bash|python.*http\" cat /etc/crontab | grep -iE \"curl|wget|bash|python.*http\" # 3. 检查恶意文件 echo -e \"\\n\\033[33m[3/5] 扫描常见恶意路径...\\033[0m\" scan_dirs=(\"/tmp\" \"/var/tmp\" \"/dev/shm\" \"/root\" \"/home\") for dir in \"${scan_dirs[@]}\"; do echo \"扫描 $dir...\" find \"$dir\" -type f \\( -name \"*.silverfox\" -o -name \"*silverfox*\" -o -name \"foxservice\" \\) 2\u003e/dev/null done # 4. 检查网络连接 echo -e \"\\n\\033[33m[4/5] 检查可疑网络连接...\\033[0m\" netstat -antp 2\u003e/dev/null | grep -iE \"estab|listen\" | grep -v \":22\\|:80\\|:443\" | grep -v \"127.0.0.1\" # 5. 检查最近修改的文件 echo -e \"\\n\\033[33m[5/5] 检查最近24小时修改的可执行文件...\\033[0m\" find / -type f -mtime -1 -perm /u+x 2\u003e/dev/null | grep -vE \"/bin|/sbin|/usr/bin|/usr/sbin\" | head -20 echo -e \"\\n\\033[36m排查完成，若发现可疑项请及时隔离并清理\\033[0m\" 4.3 macOS 检测（Bash） #!/bin/bash # 银狐病毒检测脚本 - macOS版本 # 来源: zseagate/SilverFox-Scanner echo -e \"\\033[36m=== 银狐病毒检测 (macOS) ===\\033[0m\" # 1. 检查可疑进程 echo -e \"\\n\\033[33m[1/5] 检查可疑进程...\\033[0m\" ps aux | grep -iE \"silverfox|foxservice|svchost\" | grep -v grep if [ $? -eq 0 ]; then echo -e \"\\033[31m发现可疑进程，请重点检查上述进程\\033[0m\" fi # 2. 检查启动项与LoginHook echo -e \"\\n\\033[33m[2/5] 检查开机启动项...\\033[0m\" launchctl list | grep -iE \"silverfox|unknown|malware\" defaults read com.apple.loginwindow LoginHook 2\u003e/dev/null defaults read com.apple.loginwindow LogoutHook 2\u003e/dev/null # 3. 检查LaunchAgents/LaunchDaemons echo -e \"\\n\\033[33m[3/5] 检查Launch配置...\\033[0m\" launch_dirs=( \"/Library/LaunchAgents\" \"/Library/LaunchDaemons\" \"$HOME/Library/LaunchAgents\" ) for dir in \"${launch_dirs[@]}\"; do echo \"检查 $dir...\" ls -la \"$dir\" | grep -iE \"silverfox|foxservice|unknown\" done # 4. 扫描恶意文件 echo -e \"\\n\\033[33m[4/5] 扫描恶意文件...\\033[0m\" scan_dirs=(\"/tmp\" \"/var/tmp\" \"$HOME/Downloads\" \"$HOME/Documents\" \"/Applications\") for dir in \"${scan_dirs[@]}\"; do find \"$dir\" -type f \\( -name \"*.silverfox\" -o -name \"*silverfox*\" -o -name \"SilverFox.app\" \\) 2\u003e/dev/null done # 5. 检查网络连接 echo -e \"\\n\\033[33m[5/5] 检查可疑网络连接...\\033[0m\" lsof -i -P | grep -iE \"listen|established\" | grep -v \":22\\|:80\\|:443\" | grep -v \"127.0.0.1\" echo -e \"\\n\\033[36m排查完成，若发现可疑项建议使用专业安全工具进一步扫描\\033[0m\" 五、YARA 规则（整合版） 以下YARA规则整合了进程名、WMI、文件特征、Go语言特征和注册表持久化检测，可直接使用。\n5.1 银狐病毒完整YARA规则 rule SilverFox_Complete { meta: description = \"银狐病毒完整检测规则（进程名 + WMI + 文件特征 + Go特征 + 注册表）\" author = \"Based on zseagate/SilverFox-Scanner\" date = \"2026-05-25\" reference = \"https://github.com/zseagate/SilverFox-Scanner\" version = \"1.0\" strings: // === 进程名特征 === $proc1 = \"foxservice.exe\" $proc2 = \"xfolder32\" $proc3 = \"silverfox\" nocase $proc4 = \"svchost64.exe\" $proc5 = \"pXDc9LSz.exe\" $proc6 = \"pQpfOm.exe\" // === WMI持久化特征 === $wmi1 = \"__EventFilter\" $wmi2 = \"__EventConsumer\" $wmi3 = \"__FilterToConsumerBinding\" $wmi4 = \"root\\\\subscription\" // === 文件特征 === $ext1 = \".silverfox\" $name1 = \"foxservice\" $name2 = \"svchost64.exe\" $name3 = \"!!!文件恢复指南\" $name4 = \"xfolder32\" // === Go语言特征 === $go1 = \"go.buildinfo\" $go2 = \"runtime\" $go3 = \"GOTRACEBACK\" // === 注册表特征 === $reg1 = \"CurrentVersion\\\\Run\" $reg2 = \"AppInit_DLLs\" $reg3 = \"Shell Folders\" condition: // 高置信度：银狐特定字符串 + Go特征 any of ($proc*) or any of ($name*) or any of ($wmi*) or $go1 or ($go2 and any of ($reg*)) } rule SilverFox_Process { meta: description = \"银狐病毒进程名检测\" author = \"Based on zseagate/SilverFox-Scanner\" date = \"2026-05-25\" strings: $proc1 = \"foxservice.exe\" $proc2 = \"xfolder32\" $proc3 = \"silverfox\" nocase $proc4 = \"svchost64.exe\" $proc5 = \"pXDc9LSz.exe\" $proc6 = \"pQpfOm.exe\" condition: any of them } rule SilverFox_WMI { meta: description = \"银狐 WMI 持久化检测\" author = \"Based on zseagate/SilverFox-Scanner\" date = \"2026-05-25\" strings: $wmi1 = \"__EventFilter\" $wmi2 = \"__EventConsumer\" $wmi3 = \"__FilterToConsumerBinding\" $wmi4 = \"root\\\\subscription\" condition: any of them } rule SilverFox_File { meta: description = \"银狐病毒文件特征检测\" author = \"Based on zseagate/SilverFox-Scanner\" date = \"2026-05-25\" strings: $ext1 = \".silverfox\" $name1 = \"foxservice\" $name2 = \"svchost64.exe\" $name3 = \"!!!文件恢复指南\" $name4 = \"xfolder32\" condition: any of them } rule SilverFox_GoBinary { meta: description = \"银狐 Go语言二进制特征检测\" author = \"Based on zseagate/SilverFox-Scanner\" date = \"2026-05-25\" strings: // Go运行时特征 $go1 = \"go.buildinfo\" $go2 = \"runtime\" $go3 = \"GOTRACEBACK\" // 银狐特定字符串 $sf1 = \"foxservice\" nocase $sf2 = \"silverfox\" nocase $sf3 = \"xfolder\" nocase condition: $go1 or ($go2 and any of ($sf1, $sf2, $sf3)) } rule SilverFox_Registry { meta: description = \"银狐注册表持久化检测\" author = \"Based on zseagate/SilverFox-Scanner\" date = \"2026-05-25\" strings: $reg1 = \"CurrentVersion\\\\Run\" $reg2 = \"AppInit_DLLs\" $reg3 = \"Shell Folders\" condition: any of them } 5.2 使用示例 # 扫描整个系统 yara -r silverfox.yar / # 扫描特定目录 yara silverfox.yar /tmp # 扫描进程内存（需要libyara） yara -m silverfox.yar /proc//mem 六、检测流程示例 6.1 企业环境检测流程 步骤1: 网络隔离 ├── 发现可疑主机后，立即断网 └── 防止C2通信和数据外传 步骤2: 初步扫描 ├── 运行银狐检测脚本 ├── 检查恶意进程、注册表、WMI、计划任务 └── 记录所有可疑项 步骤3: 深度分析 ├── 对可疑进程进行内存分析 ├── 提取C2通信特征 └── 分析持久化机制 步骤4: 清理与恢复 ├── 使用专杀工具清理 ├── 恢复Windows Defender配置 ├── 重置注册表和计划任务 └── 修改所有凭证 步骤5: 溯源与报告 ├── 分析感染来源 ├── 记录IOC └── 提交威胁情报 6.2 个人用户检测流程 步骤1: 下载专杀工具 ├── 火绒银狐专杀: https://down5.huorong.cn/tools/Hrkill-SilverFox.exe ├── 深信服专杀: https://download.sangfor.com.cn/download/product/edr/antivirus_tool/sfakiller_x64.exe └── das-secbox银狐专杀: https://github.com/das-secbox/silverfox_scanner/releases 步骤2: 运行扫描 ├── 全盘扫描 ├── 等待结果 └── 清理发现的威胁 步骤3: 手动检查 ├── 检查任务管理器是否有可疑进程 ├── 检查启动项是否有异常 └── 检查浏览器是否有异常扩展 步骤4: 修改凭证 ├── 修改所有重要账户密码 ├── 检查浏览器保存的密码 └── 启用双因素认证 七、开源检测工具 工具 作者 特点 地址 silverfox_scanner 大安全 查杀库30分钟自动更新 GitHub SilverFox-Scanner zseagate 跨平台（Win/Linux/macOS） GitHub 火绒银狐专杀 火绒安全 免费专杀工具 下载 深信服专杀 深信服 免费专杀工具 下载 八、局限性说明 维度 状态 说明 IOC来源 ✅ 已验证 来自开源检测工具源代码 最新IOC ⚠️ 需更新 从 das-secbox 查杀库获取（30分钟更新） 样本分析 ❌ 无 需要获取样本在隔离环境分析 C2溯源 ❌ 无 需要专业安全团队 Go特征检测 ⚠️ 部分 YARA规则基于公开特征，可能不完整 建议: 下载 das-secbox/silverfox_scanner 获取最新查杀库。\n九、参考资源 腾讯安全：银狐木马家族分析报告 360威胁情报中心 微步在线威胁情报 VirusTotal AlienVault OTX das-secbox/silverfox_scanner zseagate/SilverFox-Scanner 本文IOC来自开源检测工具，最新IOC请从官方查杀工具获取。\n","wordCount":"1368","inLanguage":"en","datePublished":"2026-05-25T00:00:00Z","dateModified":"2026-05-25T00:00:00Z","author":{"@type":"Person","name":{"link":"https://www.chaoyuewang.cn/","name":"ksboy"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://www.chaoyuewang.cn/posts/security/silverfox-deep-analysis-2026/"},"publisher":{"@type":"Organization","name":"超越网","logo":{"@type":"ImageObject","url":"https://www.chaoyuewang.cn/favicon.ico"}}}</script></head><body id=top><header class=header><nav class=header-nav><div class=logo><a href=https://www.chaoyuewang.cn/ accesskey=h title="超越网 (Alt + H)">超越网</a><div class=logo-switches><button id=theme-toggle class=theme-toggle accesskey=t title="(Alt + T)" aria-label="Toggle theme">
+<svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+<svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div><ul id=menu class=menu><li><a href=https://www.chaoyuewang.cn/ title=首页><span>首页</span></a></li><li><a href=https://www.chaoyuewang.cn/categories/infra/ title="AI 基础设施"><span>AI 基础设施</span></a></li><li><a href=https://www.chaoyuewang.cn/categories/ops/ title=运维实践><span>运维实践</span></a></li><li><a href=https://www.chaoyuewang.cn/categories/tools/ title=工具评测><span>工具评测</span></a></li><li><a href=https://www.chaoyuewang.cn/categories/meta/ title=日常随笔><span>日常随笔</span></a></li></ul></nav></header><main class=main><article class=post-single><header class=post-header><nav class=breadcrumbs role=navigation aria-label=Breadcrumb><a href=/>Home</a>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"/></svg>
+<a href=/posts/>Posts</a>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"/></svg></nav><h1 class="post-title entry-hint-parent">银狐病毒 (SilverFox) 深度分析：Go语言木马的感染链与检测实战</h1><div class=post-meta><span>2026-05-25 00:00</span></div></header><div class=post-body><div class="post-content md-content"><h2 id=前言>前言<a hidden class=anchor aria-hidden=true href=#前言>#</a></h2><p>银狐病毒（SilverFox）是2022年9月由腾讯安全、360、微步在线三家厂商几乎同时独立发现的针对中国企业的恶意软件家族。与传统的C/C++木马不同，银狐使用 <strong>Go语言编写</strong>，这带来了独特的检测挑战和特征。</p><p>银狐的目标明确：中国企业的财务部门。攻击手法成熟：钓鱼邮件、即时通讯、假冒软件更新。持久化手段多样：注册表、WMI、计划任务、AppInit_DLLs。防御规避专业：篡改Windows Defender排除项、进程注入、随机进程名。</p><p>本文基于开源检测工具源代码分析，提供：</p><ul><li>银狐的完整感染链分析</li><li>Go语言木马的技术特征</li><li>增强版YARA规则（覆盖行为特征）</li><li>可直接使用的检测脚本</li></ul><blockquote><p><strong>声明</strong>: 本文IOC来自开源检测工具源代码，最新IOC请从官方查杀工具获取。</p></blockquote><hr><h2 id=一银狐病毒技术特征>一、银狐病毒技术特征<a hidden class=anchor aria-hidden=true href=#一银狐病毒技术特征>#</a></h2><h3 id=11-go语言木马的特征>1.1 Go语言木马的特征<a hidden class=anchor aria-hidden=true href=#11-go语言木马的特征>#</a></h3><p>银狐使用Go语言编写，具有以下可检测特征：</p><table><thead><tr><th>特征类型</th><th>检测方法</th><th>说明</th></tr></thead><tbody><tr><td><strong>Go运行时库</strong></td><td>内存扫描/字符串分析</td><td>Go程序加载<code>runtime.dll</code>、<code>go.dll</code>等运行时库</td></tr><tr><td><strong>Go二进制结构</strong></td><td>PE头分析</td><td>Go编译的二进制文件有特定的PE节区（如<code>.go.buildinfo</code>）</td></tr><tr><td><strong>Go异常处理</strong></td><td>行为分析</td><td>Go的panic/recover机制与C++异常处理不同</td></tr><tr><td><strong>Go协程特征</strong></td><td>线程行为</td><td>Go的Goroutine调度器会产生特定的线程创建模式</td></tr></tbody></table><h3 id=12-银狐的行为特征>1.2 银狐的行为特征<a hidden class=anchor aria-hidden=true href=#12-银狐的行为特征>#</a></h3><p>根据开源检测工具分析，银狐具有以下行为：</p><pre tabindex=0><code>1. 进程注入：注入 svchost.exe 等系统进程
+2. 注册表持久化：HKCU/HKLM Run键 + AppInit_DLLs
+3. WMI事件订阅：__EventFilter + __EventConsumer + __FilterToConsumerBinding
+4. 计划任务：创建 Task1 或 SilverFox 相关任务
+5. Windows Defender排除：篡改排除路径以规避检测
+6. 文件伪装：使用 svchost64.exe、随机进程名（pXDc9LSz.exe）
+</code></pre><hr><h2 id=二感染链分析>二、感染链分析<a hidden class=anchor aria-hidden=true href=#二感染链分析>#</a></h2><p>银狐的完整攻击链如下：</p><pre tabindex=0><code>┌─────────────────────────────────────────────────────────────────────┐
+│                        银狐感染链                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  阶段1: 初始访问                                                    │
+│  ├── 钓鱼邮件（伪装成发票、合同）                                    │
+│  ├── 即时通讯（微信/钉钉发送恶意文件）                               │
+│  └── 假冒软件更新（财务软件、OA系统）                                │
+│                                                                     │
+│  阶段2: 执行                                                        │
+│  ├── 用户双击恶意附件                                              │
+│  ├── 恶意宏代码执行                                                 │
+│  └── 社会工程学诱导（&#34;文件恢复指南&#34;等）                              │
+│                                                                     │
+│  阶段3: 持久化                                                      │
+│  ├── 注册表 Run 键写入                                               │
+│  ├── WMI 事件订阅（__EventFilter）                                  │
+│  ├── 计划任务创建                                                   │
+│  └── AppInit_DLLs 注入                                              │
+│                                                                     │
+│  阶段4: 防御规避                                                    │
+│  ├── Windows Defender 排除项篡改                                    │
+│  ├── 进程注入（svchost.exe）                                        │
+│  ├── 随机进程名生成                                                 │
+│  └── 文件伪装（svchost64.exe）                                      │
+│                                                                     │
+│  阶段5: C2通信                                                      │
+│  ├── HTTP/HTTPS 心跳包                                              │
+│  ├── DNS 查询（可能使用DGA）                                        │
+│  └── 加密通信（TLS/自定义协议）                                     │
+│                                                                     │
+│  阶段6: 数据窃取                                                    │
+│  ├── 浏览器凭证窃取                                                 │
+│  ├── 财务软件凭证窃取                                               │
+│  └── 即时通讯凭证窃取                                               │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><h3 id=21-各阶段检测要点>2.1 各阶段检测要点<a hidden class=anchor aria-hidden=true href=#21-各阶段检测要点>#</a></h3><table><thead><tr><th>阶段</th><th>检测重点</th><th>检测工具</th></tr></thead><tbody><tr><td>初始访问</td><td>邮件附件、钓鱼链接</td><td>邮件网关、URL过滤</td></tr><tr><td>执行</td><td>可疑进程启动</td><td>EDR、进程监控</td></tr><tr><td>持久化</td><td>注册表、WMI、计划任务</td><td>注册表监控、WMI监控</td></tr><tr><td>防御规避</td><td>Defender排除项、进程注入</td><td>安全配置审计、内存扫描</td></tr><tr><td>C2通信</td><td>异常网络连接、DNS查询</td><td>网络流量分析、DNS监控</td></tr><tr><td>数据窃取</td><td>凭证访问、文件外传</td><td>DLP、凭证监控</td></tr></tbody></table><hr><h2 id=三ioc-列表来自开源工具>三、IOC 列表（来自开源工具）<a hidden class=anchor aria-hidden=true href=#三ioc-列表来自开源工具>#</a></h2><p>以下IOC来自 <a href=https://github.com/zseagate/SilverFox-Scanner>zseagate/SilverFox-Scanner</a> 和 <a href=https://github.com/das-secbox/silverfox_scanner>das-secbox/silverfox_scanner</a> 的源代码。</p><h3 id=31-恶意进程名>3.1 恶意进程名<a hidden class=anchor aria-hidden=true href=#31-恶意进程名>#</a></h3><pre tabindex=0><code>foxservice.exe
+xfolder32*
+svchost.exe          # 注意：正常svchost在System32，异常路径的是恶意
+*silverfox*
+pXDc9LSz.exe         # 随机生成的进程名示例
+pQpfOm.exe           # 随机生成的进程名示例
+svchost64.exe        # 伪装进程
+</code></pre><h3 id=32-注册表持久化>3.2 注册表持久化<a hidden class=anchor aria-hidden=true href=#32-注册表持久化>#</a></h3><pre tabindex=0><code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+HKLM\Software\Microsoft\Windows\CurrentVersion\Run
+HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs
+HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+</code></pre><h3 id=33-wmi-持久化>3.3 WMI 持久化<a hidden class=anchor aria-hidden=true href=#33-wmi-持久化>#</a></h3><pre tabindex=0><code>__EventFilter
+__EventConsumer
+__FilterToConsumerBinding
+Namespace: root\subscription
+</code></pre><h3 id=34-计划任务>3.4 计划任务<a hidden class=anchor aria-hidden=true href=#34-计划任务>#</a></h3><pre tabindex=0><code>Task1
+SilverFox
+</code></pre><h3 id=35-恶意文件特征>3.5 恶意文件特征<a hidden class=anchor aria-hidden=true href=#35-恶意文件特征>#</a></h3><pre tabindex=0><code>*.silverfox
+*silverfox*
+foxservice
+svchost64.exe
+!!!文件恢复指南*
+</code></pre><h3 id=36-恶意文件路径>3.6 恶意文件路径<a hidden class=anchor aria-hidden=true href=#36-恶意文件路径>#</a></h3><pre tabindex=0><code>C:\ProgramData\xfolder32
+C:\Users\Public\Documents\
+C:\Users\$USERNAME\AppData\Local\Temp\
+</code></pre><h3 id=37-windows-defender-排除项>3.7 Windows Defender 排除项<a hidden class=anchor aria-hidden=true href=#37-windows-defender-排除项>#</a></h3><p>银狐常篡改Windows Defender排除路径以规避检测，需检查：</p><pre tabindex=0><code>Get-MpPreference | Select-Object -ExpandProperty ExclusionPath
+</code></pre><hr><h2 id=四检测脚本>四、检测脚本<a hidden class=anchor aria-hidden=true href=#四检测脚本>#</a></h2><h3 id=41-windows-检测powershell>4.1 Windows 检测（PowerShell）<a hidden class=anchor aria-hidden=true href=#41-windows-检测powershell>#</a></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-powershell data-lang=powershell><span class=line><span class=cl><span class=c># 银狐病毒检测脚本 - Windows版本</span>
+</span></span><span class=line><span class=cl><span class=c># 来源: zseagate/SilverFox-Scanner</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;=== 银狐病毒检测 (Windows) ===&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Cyan</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c># 1. 检查恶意进程</span>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>[1/6] 检查可疑进程...&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Yellow</span>
+</span></span><span class=line><span class=cl><span class=nv>$maliciousProcesses</span> <span class=p>=</span> <span class=vm>@</span><span class=p>(</span><span class=s2>&#34;foxservice.exe&#34;</span><span class=p>,</span> <span class=s2>&#34;xfolder32*&#34;</span><span class=p>,</span> <span class=s2>&#34;svchost.exe&#34;</span><span class=p>,</span> <span class=s2>&#34;*silverfox*&#34;</span><span class=p>,</span> <span class=s2>&#34;pXDc9LSz.exe&#34;</span><span class=p>,</span> <span class=s2>&#34;pQpfOm.exe&#34;</span><span class=p>,</span> <span class=s2>&#34;svchost64.exe&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=nv>$foundProcesses</span> <span class=p>=</span> <span class=nb>Get-Process</span> <span class=p>|</span> <span class=nb>Where-Object</span> <span class=p>{</span> <span class=nv>$processName</span> <span class=p>=</span> <span class=nv>$_</span><span class=p>.</span><span class=n>Name</span><span class=p>;</span> <span class=nv>$maliciousProcesses</span> <span class=p>|</span> <span class=nb>Where-Object</span> <span class=p>{</span> <span class=nv>$processName</span> <span class=o>-like</span> <span class=nv>$_</span> <span class=p>}</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=nv>$foundProcesses</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;发现可疑进程:&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Red</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$foundProcesses</span> <span class=p>|</span> <span class=nb>Format-Table</span> <span class=n>Id</span><span class=p>,</span> <span class=n>Name</span><span class=p>,</span> <span class=n>Path</span><span class=p>,</span> <span class=n>StartTime</span> <span class=n>-AutoSize</span>
+</span></span><span class=line><span class=cl><span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;未发现已知恶意进程&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Green</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c># 2. 检查注册表持久化项</span>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>[2/6] 检查注册表持久化项...&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Yellow</span>
+</span></span><span class=line><span class=cl><span class=nv>$runKeys</span> <span class=p>=</span> <span class=vm>@</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;HKCU:\Software\Microsoft\Windows\CurrentVersion\Run&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;HKLM:\Software\Microsoft\Windows\CurrentVersion\Run&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>foreach</span> <span class=p>(</span><span class=nv>$key</span> <span class=k>in</span> <span class=nv>$runKeys</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;检查 </span><span class=nv>$key</span><span class=s2>...&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=k>try</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nb>Get-ItemProperty</span> <span class=n>-Path</span> <span class=nv>$key</span> <span class=n>-ErrorAction</span> <span class=n>Stop</span> <span class=p>|</span> <span class=nb>Select-Object</span> <span class=p>*</span> <span class=p>|</span> <span class=nb>Format-List</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span> <span class=k>catch</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nb>Write-Host</span> <span class=s2>&#34;无法读取该注册表项&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Gray</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c># 3. 检查WMI事件订阅（银狐常用持久化方式）</span>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>[3/6] 检查WMI事件订阅...&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Yellow</span>
+</span></span><span class=line><span class=cl><span class=nb>Get-WmiObject</span> <span class=n>-Namespace</span> <span class=n>root</span><span class=p>\</span><span class=n>subscription</span> <span class=n>-Class</span> <span class=n>__EventFilter</span> <span class=n>-ErrorAction</span> <span class=n>SilentlyContinue</span> <span class=p>|</span> <span class=nb>ForEach-Object</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;发现WMI事件过滤器: </span><span class=p>$(</span><span class=nv>$_</span><span class=p>.</span><span class=n>Name</span><span class=p>)</span><span class=s2>&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Red</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;查询语句: </span><span class=p>$(</span><span class=nv>$_</span><span class=p>.</span><span class=n>Query</span><span class=p>)</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c># 4. 检查计划任务</span>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>[4/6] 检查计划任务...&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Yellow</span>
+</span></span><span class=line><span class=cl><span class=nb>Get-ScheduledTask</span> <span class=p>|</span> <span class=nb>Where-Object</span> <span class=p>{</span> <span class=nv>$_</span><span class=p>.</span><span class=py>TaskName</span> <span class=o>-like</span> <span class=s2>&#34;*Task1*&#34;</span> <span class=o>-or</span> <span class=nv>$_</span><span class=p>.</span><span class=py>Description</span> <span class=o>-like</span> <span class=s2>&#34;*SilverFox*&#34;</span> <span class=p>}</span> <span class=p>|</span> <span class=nb>Format-Table</span> <span class=n>TaskName</span><span class=p>,</span> <span class=n>State</span><span class=p>,</span> <span class=n>Description</span> <span class=n>-AutoSize</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c># 5. 检查常见恶意文件路径</span>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>[5/6] 扫描恶意文件路径...&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Yellow</span>
+</span></span><span class=line><span class=cl><span class=nv>$scanPaths</span> <span class=p>=</span> <span class=vm>@</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;C:\ProgramData\xfolder32&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;C:\Users\Public\Documents\&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$env:TEMP</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;C:\Users\</span><span class=nv>$env:USERNAME</span><span class=s2>\AppData\Local\Temp&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>foreach</span> <span class=p>(</span><span class=nv>$path</span> <span class=k>in</span> <span class=nv>$scanPaths</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=nb>Test-Path</span> <span class=nv>$path</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nb>Write-Host</span> <span class=s2>&#34;扫描 </span><span class=nv>$path</span><span class=s2>...&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=nb>Get-ChildItem</span> <span class=n>-Path</span> <span class=nv>$path</span> <span class=n>-Recurse</span> <span class=n>-Force</span> <span class=n>-ErrorAction</span> <span class=n>SilentlyContinue</span> <span class=p>|</span> <span class=nb>Where-Object</span> <span class=p>{</span> <span class=nv>$_</span><span class=p>.</span><span class=py>Name</span> <span class=o>-match</span> <span class=s2>&#34;svchost64\.exe|.*\.silverfox|!!!文件恢复指南.*&#34;</span> <span class=p>}</span> <span class=p>|</span> <span class=nb>ForEach-Object</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=nb>Write-Host</span> <span class=s2>&#34;发现可疑文件: </span><span class=p>$(</span><span class=nv>$_</span><span class=p>.</span><span class=n>FullName</span><span class=p>)</span><span class=s2>&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Red</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c># 6. 检查Windows Defender排除项（银狐常篡改此配置）</span>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>[6/6] 检查Windows Defender排除路径...&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Yellow</span>
+</span></span><span class=line><span class=cl><span class=nv>$exclusions</span> <span class=p>=</span> <span class=nb>Get-MpPreference</span> <span class=p>|</span> <span class=nb>Select-Object</span> <span class=n>-ExpandProperty</span> <span class=n>ExclusionPath</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=nv>$exclusions</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;发现排除路径:&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Red</span>
+</span></span><span class=line><span class=cl>    <span class=nv>$exclusions</span> <span class=p>|</span> <span class=nb>ForEach-Object</span> <span class=p>{</span> <span class=nb>Write-Host</span> <span class=nv>$_</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nb>Write-Host</span> <span class=s2>&#34;未发现异常排除路径&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Green</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>Write-Host</span> <span class=s2>&#34;</span><span class=se>`n</span><span class=s2>排查完成，若发现上述可疑项目，请立即断网并使用专杀工具清理&#34;</span> <span class=n>-ForegroundColor</span> <span class=n>Cyan</span>
+</span></span></code></pre></div><h3 id=42-linux-检测bash>4.2 Linux 检测（Bash）<a hidden class=anchor aria-hidden=true href=#42-linux-检测bash>#</a></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=cp>#!/bin/bash
+</span></span></span><span class=line><span class=cl><span class=cp></span><span class=c1># 银狐病毒检测脚本 - Linux版本</span>
+</span></span><span class=line><span class=cl><span class=c1># 来源: zseagate/SilverFox-Scanner</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\033[36m=== 银狐病毒检测 (Linux) ===\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 1. 检查可疑进程</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[1/5] 检查可疑进程...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>ps aux <span class=p>|</span> grep -iE <span class=s2>&#34;silverfox|foxservice|svchost|minerd|xmrig&#34;</span> <span class=p>|</span> grep -v grep
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -eq <span class=m>0</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+</span></span><span class=line><span class=cl>    <span class=nb>echo</span> -e <span class=s2>&#34;\033[31m发现可疑进程，请重点检查上述进程\033[0m&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>fi</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 2. 检查开机启动项</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[2/5] 检查开机启动项...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>systemctl list-unit-files --type<span class=o>=</span>service <span class=p>|</span> grep -iE <span class=s2>&#34;silverfox|malware|unknown&#34;</span>
+</span></span><span class=line><span class=cl>crontab -l 2&gt;/dev/null <span class=p>|</span> grep -iE <span class=s2>&#34;curl|wget|bash|python.*http&#34;</span>
+</span></span><span class=line><span class=cl>cat /etc/crontab <span class=p>|</span> grep -iE <span class=s2>&#34;curl|wget|bash|python.*http&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 3. 检查恶意文件</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[3/5] 扫描常见恶意路径...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>scan_dirs</span><span class=o>=(</span><span class=s2>&#34;/tmp&#34;</span> <span class=s2>&#34;/var/tmp&#34;</span> <span class=s2>&#34;/dev/shm&#34;</span> <span class=s2>&#34;/root&#34;</span> <span class=s2>&#34;/home&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl><span class=k>for</span> dir in <span class=s2>&#34;</span><span class=si>${</span><span class=nv>scan_dirs</span><span class=p>[@]</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=nb>echo</span> <span class=s2>&#34;扫描 </span><span class=nv>$dir</span><span class=s2>...&#34;</span>
+</span></span><span class=line><span class=cl>    find <span class=s2>&#34;</span><span class=nv>$dir</span><span class=s2>&#34;</span> -type f <span class=se>\(</span> -name <span class=s2>&#34;*.silverfox&#34;</span> -o -name <span class=s2>&#34;*silverfox*&#34;</span> -o -name <span class=s2>&#34;foxservice&#34;</span> <span class=se>\)</span> 2&gt;/dev/null
+</span></span><span class=line><span class=cl><span class=k>done</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 4. 检查网络连接</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[4/5] 检查可疑网络连接...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>netstat -antp 2&gt;/dev/null <span class=p>|</span> grep -iE <span class=s2>&#34;estab|listen&#34;</span> <span class=p>|</span> grep -v <span class=s2>&#34;:22\|:80\|:443&#34;</span> <span class=p>|</span> grep -v <span class=s2>&#34;127.0.0.1&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 5. 检查最近修改的文件</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[5/5] 检查最近24小时修改的可执行文件...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>find / -type f -mtime -1 -perm /u+x 2&gt;/dev/null <span class=p>|</span> grep -vE <span class=s2>&#34;/bin|/sbin|/usr/bin|/usr/sbin&#34;</span> <span class=p>|</span> head -20
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[36m排查完成，若发现可疑项请及时隔离并清理\033[0m&#34;</span>
+</span></span></code></pre></div><h3 id=43-macos-检测bash>4.3 macOS 检测（Bash）<a hidden class=anchor aria-hidden=true href=#43-macos-检测bash>#</a></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=cp>#!/bin/bash
+</span></span></span><span class=line><span class=cl><span class=cp></span><span class=c1># 银狐病毒检测脚本 - macOS版本</span>
+</span></span><span class=line><span class=cl><span class=c1># 来源: zseagate/SilverFox-Scanner</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\033[36m=== 银狐病毒检测 (macOS) ===\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 1. 检查可疑进程</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[1/5] 检查可疑进程...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>ps aux <span class=p>|</span> grep -iE <span class=s2>&#34;silverfox|foxservice|svchost&#34;</span> <span class=p>|</span> grep -v grep
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=o>[</span> <span class=nv>$?</span> -eq <span class=m>0</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+</span></span><span class=line><span class=cl>    <span class=nb>echo</span> -e <span class=s2>&#34;\033[31m发现可疑进程，请重点检查上述进程\033[0m&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>fi</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 2. 检查启动项与LoginHook</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[2/5] 检查开机启动项...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>launchctl list <span class=p>|</span> grep -iE <span class=s2>&#34;silverfox|unknown|malware&#34;</span>
+</span></span><span class=line><span class=cl>defaults <span class=nb>read</span> com.apple.loginwindow LoginHook 2&gt;/dev/null
+</span></span><span class=line><span class=cl>defaults <span class=nb>read</span> com.apple.loginwindow LogoutHook 2&gt;/dev/null
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 3. 检查LaunchAgents/LaunchDaemons</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[3/5] 检查Launch配置...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>launch_dirs</span><span class=o>=(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;/Library/LaunchAgents&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;/Library/LaunchDaemons&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;</span><span class=nv>$HOME</span><span class=s2>/Library/LaunchAgents&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>)</span>
+</span></span><span class=line><span class=cl><span class=k>for</span> dir in <span class=s2>&#34;</span><span class=si>${</span><span class=nv>launch_dirs</span><span class=p>[@]</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    <span class=nb>echo</span> <span class=s2>&#34;检查 </span><span class=nv>$dir</span><span class=s2>...&#34;</span>
+</span></span><span class=line><span class=cl>    ls -la <span class=s2>&#34;</span><span class=nv>$dir</span><span class=s2>&#34;</span> <span class=p>|</span> grep -iE <span class=s2>&#34;silverfox|foxservice|unknown&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>done</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 4. 扫描恶意文件</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[4/5] 扫描恶意文件...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl><span class=nv>scan_dirs</span><span class=o>=(</span><span class=s2>&#34;/tmp&#34;</span> <span class=s2>&#34;/var/tmp&#34;</span> <span class=s2>&#34;</span><span class=nv>$HOME</span><span class=s2>/Downloads&#34;</span> <span class=s2>&#34;</span><span class=nv>$HOME</span><span class=s2>/Documents&#34;</span> <span class=s2>&#34;/Applications&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl><span class=k>for</span> dir in <span class=s2>&#34;</span><span class=si>${</span><span class=nv>scan_dirs</span><span class=p>[@]</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>;</span> <span class=k>do</span>
+</span></span><span class=line><span class=cl>    find <span class=s2>&#34;</span><span class=nv>$dir</span><span class=s2>&#34;</span> -type f <span class=se>\(</span> -name <span class=s2>&#34;*.silverfox&#34;</span> -o -name <span class=s2>&#34;*silverfox*&#34;</span> -o -name <span class=s2>&#34;SilverFox.app&#34;</span> <span class=se>\)</span> 2&gt;/dev/null
+</span></span><span class=line><span class=cl><span class=k>done</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 5. 检查网络连接</span>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[33m[5/5] 检查可疑网络连接...\033[0m&#34;</span>
+</span></span><span class=line><span class=cl>lsof -i -P <span class=p>|</span> grep -iE <span class=s2>&#34;listen|established&#34;</span> <span class=p>|</span> grep -v <span class=s2>&#34;:22\|:80\|:443&#34;</span> <span class=p>|</span> grep -v <span class=s2>&#34;127.0.0.1&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nb>echo</span> -e <span class=s2>&#34;\n\033[36m排查完成，若发现可疑项建议使用专业安全工具进一步扫描\033[0m&#34;</span>
+</span></span></code></pre></div><hr><h2 id=五yara-规则整合版>五、YARA 规则（整合版）<a hidden class=anchor aria-hidden=true href=#五yara-规则整合版>#</a></h2><p>以下YARA规则整合了进程名、WMI、文件特征、Go语言特征和注册表持久化检测，可直接使用。</p><h3 id=51-银狐病毒完整yara规则>5.1 银狐病毒完整YARA规则<a hidden class=anchor aria-hidden=true href=#51-银狐病毒完整yara规则>#</a></h3><pre tabindex=0><code class=language-yara data-lang=yara>rule SilverFox_Complete {
+    meta:
+        description = &#34;银狐病毒完整检测规则（进程名 + WMI + 文件特征 + Go特征 + 注册表）&#34;
+        author = &#34;Based on zseagate/SilverFox-Scanner&#34;
+        date = &#34;2026-05-25&#34;
+        reference = &#34;https://github.com/zseagate/SilverFox-Scanner&#34;
+        version = &#34;1.0&#34;
+    
+    strings:
+        // === 进程名特征 ===
+        $proc1 = &#34;foxservice.exe&#34;
+        $proc2 = &#34;xfolder32&#34;
+        $proc3 = &#34;silverfox&#34; nocase
+        $proc4 = &#34;svchost64.exe&#34;
+        $proc5 = &#34;pXDc9LSz.exe&#34;
+        $proc6 = &#34;pQpfOm.exe&#34;
+        
+        // === WMI持久化特征 ===
+        $wmi1 = &#34;__EventFilter&#34;
+        $wmi2 = &#34;__EventConsumer&#34;
+        $wmi3 = &#34;__FilterToConsumerBinding&#34;
+        $wmi4 = &#34;root\\subscription&#34;
+        
+        // === 文件特征 ===
+        $ext1 = &#34;.silverfox&#34;
+        $name1 = &#34;foxservice&#34;
+        $name2 = &#34;svchost64.exe&#34;
+        $name3 = &#34;!!!文件恢复指南&#34;
+        $name4 = &#34;xfolder32&#34;
+        
+        // === Go语言特征 ===
+        $go1 = &#34;go.buildinfo&#34;
+        $go2 = &#34;runtime&#34;
+        $go3 = &#34;GOTRACEBACK&#34;
+        
+        // === 注册表特征 ===
+        $reg1 = &#34;CurrentVersion\\Run&#34;
+        $reg2 = &#34;AppInit_DLLs&#34;
+        $reg3 = &#34;Shell Folders&#34;
+    
+    condition:
+        // 高置信度：银狐特定字符串 + Go特征
+        any of ($proc*) or any of ($name*) or any of ($wmi*) or 
+        $go1 or ($go2 and any of ($reg*))
+}
+
+rule SilverFox_Process {
+    meta:
+        description = &#34;银狐病毒进程名检测&#34;
+        author = &#34;Based on zseagate/SilverFox-Scanner&#34;
+        date = &#34;2026-05-25&#34;
+    
+    strings:
+        $proc1 = &#34;foxservice.exe&#34;
+        $proc2 = &#34;xfolder32&#34;
+        $proc3 = &#34;silverfox&#34; nocase
+        $proc4 = &#34;svchost64.exe&#34;
+        $proc5 = &#34;pXDc9LSz.exe&#34;
+        $proc6 = &#34;pQpfOm.exe&#34;
+    
+    condition:
+        any of them
+}
+
+rule SilverFox_WMI {
+    meta:
+        description = &#34;银狐 WMI 持久化检测&#34;
+        author = &#34;Based on zseagate/SilverFox-Scanner&#34;
+        date = &#34;2026-05-25&#34;
+    
+    strings:
+        $wmi1 = &#34;__EventFilter&#34;
+        $wmi2 = &#34;__EventConsumer&#34;
+        $wmi3 = &#34;__FilterToConsumerBinding&#34;
+        $wmi4 = &#34;root\\subscription&#34;
+    
+    condition:
+        any of them
+}
+
+rule SilverFox_File {
+    meta:
+        description = &#34;银狐病毒文件特征检测&#34;
+        author = &#34;Based on zseagate/SilverFox-Scanner&#34;
+        date = &#34;2026-05-25&#34;
+    
+    strings:
+        $ext1 = &#34;.silverfox&#34;
+        $name1 = &#34;foxservice&#34;
+        $name2 = &#34;svchost64.exe&#34;
+        $name3 = &#34;!!!文件恢复指南&#34;
+        $name4 = &#34;xfolder32&#34;
+    
+    condition:
+        any of them
+}
+
+rule SilverFox_GoBinary {
+    meta:
+        description = &#34;银狐 Go语言二进制特征检测&#34;
+        author = &#34;Based on zseagate/SilverFox-Scanner&#34;
+        date = &#34;2026-05-25&#34;
+    
+    strings:
+        // Go运行时特征
+        $go1 = &#34;go.buildinfo&#34;
+        $go2 = &#34;runtime&#34;
+        $go3 = &#34;GOTRACEBACK&#34;
+        
+        // 银狐特定字符串
+        $sf1 = &#34;foxservice&#34; nocase
+        $sf2 = &#34;silverfox&#34; nocase
+        $sf3 = &#34;xfolder&#34; nocase
+    
+    condition:
+        $go1 or ($go2 and any of ($sf1, $sf2, $sf3))
+}
+
+rule SilverFox_Registry {
+    meta:
+        description = &#34;银狐注册表持久化检测&#34;
+        author = &#34;Based on zseagate/SilverFox-Scanner&#34;
+        date = &#34;2026-05-25&#34;
+    
+    strings:
+        $reg1 = &#34;CurrentVersion\\Run&#34;
+        $reg2 = &#34;AppInit_DLLs&#34;
+        $reg3 = &#34;Shell Folders&#34;
+    
+    condition:
+        any of them
+}
+</code></pre><h3 id=52-使用示例>5.2 使用示例<a hidden class=anchor aria-hidden=true href=#52-使用示例>#</a></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># 扫描整个系统</span>
+</span></span><span class=line><span class=cl>yara -r silverfox.yar /
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 扫描特定目录</span>
+</span></span><span class=line><span class=cl>yara silverfox.yar /tmp
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 扫描进程内存（需要libyara）</span>
+</span></span><span class=line><span class=cl>yara -m silverfox.yar /proc/&lt;pid&gt;/mem
+</span></span></code></pre></div><hr><h2 id=六检测流程示例>六、检测流程示例<a hidden class=anchor aria-hidden=true href=#六检测流程示例>#</a></h2><h3 id=61-企业环境检测流程>6.1 企业环境检测流程<a hidden class=anchor aria-hidden=true href=#61-企业环境检测流程>#</a></h3><pre tabindex=0><code>步骤1: 网络隔离
+├── 发现可疑主机后，立即断网
+└── 防止C2通信和数据外传
+
+步骤2: 初步扫描
+├── 运行银狐检测脚本
+├── 检查恶意进程、注册表、WMI、计划任务
+└── 记录所有可疑项
+
+步骤3: 深度分析
+├── 对可疑进程进行内存分析
+├── 提取C2通信特征
+└── 分析持久化机制
+
+步骤4: 清理与恢复
+├── 使用专杀工具清理
+├── 恢复Windows Defender配置
+├── 重置注册表和计划任务
+└── 修改所有凭证
+
+步骤5: 溯源与报告
+├── 分析感染来源
+├── 记录IOC
+└── 提交威胁情报
+</code></pre><h3 id=62-个人用户检测流程>6.2 个人用户检测流程<a hidden class=anchor aria-hidden=true href=#62-个人用户检测流程>#</a></h3><pre tabindex=0><code>步骤1: 下载专杀工具
+├── 火绒银狐专杀: https://down5.huorong.cn/tools/Hrkill-SilverFox.exe
+├── 深信服专杀: https://download.sangfor.com.cn/download/product/edr/antivirus_tool/sfakiller_x64.exe
+└── das-secbox银狐专杀: https://github.com/das-secbox/silverfox_scanner/releases
+
+步骤2: 运行扫描
+├── 全盘扫描
+├── 等待结果
+└── 清理发现的威胁
+
+步骤3: 手动检查
+├── 检查任务管理器是否有可疑进程
+├── 检查启动项是否有异常
+└── 检查浏览器是否有异常扩展
+
+步骤4: 修改凭证
+├── 修改所有重要账户密码
+├── 检查浏览器保存的密码
+└── 启用双因素认证
+</code></pre><hr><h2 id=七开源检测工具>七、开源检测工具<a hidden class=anchor aria-hidden=true href=#七开源检测工具>#</a></h2><table><thead><tr><th>工具</th><th>作者</th><th>特点</th><th>地址</th></tr></thead><tbody><tr><td>silverfox_scanner</td><td>大安全</td><td>查杀库30分钟自动更新</td><td><a href=https://github.com/das-secbox/silverfox_scanner>GitHub</a></td></tr><tr><td>SilverFox-Scanner</td><td>zseagate</td><td>跨平台（Win/Linux/macOS）</td><td><a href=https://github.com/zseagate/SilverFox-Scanner>GitHub</a></td></tr><tr><td>火绒银狐专杀</td><td>火绒安全</td><td>免费专杀工具</td><td><a href=https://down5.huorong.cn/tools/Hrkill-SilverFox.exe>下载</a></td></tr><tr><td>深信服专杀</td><td>深信服</td><td>免费专杀工具</td><td><a href=https://download.sangfor.com.cn/download/product/edr/antivirus_tool/sfakiller_x64.exe>下载</a></td></tr></tbody></table><hr><h2 id=八局限性说明>八、局限性说明<a hidden class=anchor aria-hidden=true href=#八局限性说明>#</a></h2><table><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody><tr><td><strong>IOC来源</strong></td><td>✅ 已验证</td><td>来自开源检测工具源代码</td></tr><tr><td><strong>最新IOC</strong></td><td>⚠️ 需更新</td><td>从 das-secbox 查杀库获取（30分钟更新）</td></tr><tr><td><strong>样本分析</strong></td><td>❌ 无</td><td>需要获取样本在隔离环境分析</td></tr><tr><td><strong>C2溯源</strong></td><td>❌ 无</td><td>需要专业安全团队</td></tr><tr><td><strong>Go特征检测</strong></td><td>⚠️ 部分</td><td>YARA规则基于公开特征，可能不完整</td></tr></tbody></table><blockquote><p><strong>建议</strong>: 下载 <a href=https://github.com/das-secbox/silverfox_scanner/releases>das-secbox/silverfox_scanner</a> 获取最新查杀库。</p></blockquote><hr><h2 id=九参考资源>九、参考资源<a hidden class=anchor aria-hidden=true href=#九参考资源>#</a></h2><ul><li><a href=https://ti.qq.com/>腾讯安全：银狐木马家族分析报告</a></li><li><a href=https://ti.360.cn/>360威胁情报中心</a></li><li><a href=https://x.threatbook.com/>微步在线威胁情报</a></li><li><a href=https://www.virustotal.com/>VirusTotal</a></li><li><a href=https://otx.alienvault.com/>AlienVault OTX</a></li><li><a href=https://github.com/das-secbox/silverfox_scanner>das-secbox/silverfox_scanner</a></li><li><a href=https://github.com/zseagate/SilverFox-Scanner>zseagate/SilverFox-Scanner</a></li></ul><hr><p><em>本文IOC来自开源检测工具，最新IOC请从官方查杀工具获取。</em></p></div></div><aside class=toc-sidebar><details class=toc open><summary accesskey=c title="(Alt + C)"><span class=title>Table of Contents</span></summary><div class=inner><ul><li><a href=#%e5%89%8d%e8%a8%80 aria-label=前言>前言</a></li><li><a href=#%e4%b8%80%e9%93%b6%e7%8b%90%e7%97%85%e6%af%92%e6%8a%80%e6%9c%af%e7%89%b9%e5%be%81 aria-label=一、银狐病毒技术特征>一、银狐病毒技术特征</a><ul><li><a href=#11-go%e8%af%ad%e8%a8%80%e6%9c%a8%e9%a9%ac%e7%9a%84%e7%89%b9%e5%be%81 aria-label="1.1 Go语言木马的特征">1.1 Go语言木马的特征</a></li><li><a href=#12-%e9%93%b6%e7%8b%90%e7%9a%84%e8%a1%8c%e4%b8%ba%e7%89%b9%e5%be%81 aria-label="1.2 银狐的行为特征">1.2 银狐的行为特征</a></li></ul></li><li><a href=#%e4%ba%8c%e6%84%9f%e6%9f%93%e9%93%be%e5%88%86%e6%9e%90 aria-label=二、感染链分析>二、感染链分析</a><ul><li><a href=#21-%e5%90%84%e9%98%b6%e6%ae%b5%e6%a3%80%e6%b5%8b%e8%a6%81%e7%82%b9 aria-label="2.1 各阶段检测要点">2.1 各阶段检测要点</a></li></ul></li><li><a href=#%e4%b8%89ioc-%e5%88%97%e8%a1%a8%e6%9d%a5%e8%87%aa%e5%bc%80%e6%ba%90%e5%b7%a5%e5%85%b7 aria-label="三、IOC 列表（来自开源工具）">三、IOC 列表（来自开源工具）</a><ul><li><a href=#31-%e6%81%b6%e6%84%8f%e8%bf%9b%e7%a8%8b%e5%90%8d aria-label="3.1 恶意进程名">3.1 恶意进程名</a></li><li><a href=#32-%e6%b3%a8%e5%86%8c%e8%a1%a8%e6%8c%81%e4%b9%85%e5%8c%96 aria-label="3.2 注册表持久化">3.2 注册表持久化</a></li><li><a href=#33-wmi-%e6%8c%81%e4%b9%85%e5%8c%96 aria-label="3.3 WMI 持久化">3.3 WMI 持久化</a></li><li><a href=#34-%e8%ae%a1%e5%88%92%e4%bb%bb%e5%8a%a1 aria-label="3.4 计划任务">3.4 计划任务</a></li><li><a href=#35-%e6%81%b6%e6%84%8f%e6%96%87%e4%bb%b6%e7%89%b9%e5%be%81 aria-label="3.5 恶意文件特征">3.5 恶意文件特征</a></li><li><a href=#36-%e6%81%b6%e6%84%8f%e6%96%87%e4%bb%b6%e8%b7%af%e5%be%84 aria-label="3.6 恶意文件路径">3.6 恶意文件路径</a></li><li><a href=#37-windows-defender-%e6%8e%92%e9%99%a4%e9%a1%b9 aria-label="3.7 Windows Defender 排除项">3.7 Windows Defender 排除项</a></li></ul></li><li><a href=#%e5%9b%9b%e6%a3%80%e6%b5%8b%e8%84%9a%e6%9c%ac aria-label=四、检测脚本>四、检测脚本</a><ul><li><a href=#41-windows-%e6%a3%80%e6%b5%8bpowershell aria-label="4.1 Windows 检测（PowerShell）">4.1 Windows 检测（PowerShell）</a></li><li><a href=#42-linux-%e6%a3%80%e6%b5%8bbash aria-label="4.2 Linux 检测（Bash）">4.2 Linux 检测（Bash）</a></li><li><a href=#43-macos-%e6%a3%80%e6%b5%8bbash aria-label="4.3 macOS 检测（Bash）">4.3 macOS 检测（Bash）</a></li></ul></li><li><a href=#%e4%ba%94yara-%e8%a7%84%e5%88%99%e6%95%b4%e5%90%88%e7%89%88 aria-label="五、YARA 规则（整合版）">五、YARA 规则（整合版）</a><ul><li><a href=#51-%e9%93%b6%e7%8b%90%e7%97%85%e6%af%92%e5%ae%8c%e6%95%b4yara%e8%a7%84%e5%88%99 aria-label="5.1 银狐病毒完整YARA规则">5.1 银狐病毒完整YARA规则</a></li><li><a href=#52-%e4%bd%bf%e7%94%a8%e7%a4%ba%e4%be%8b aria-label="5.2 使用示例">5.2 使用示例</a></li></ul></li><li><a href=#%e5%85%ad%e6%a3%80%e6%b5%8b%e6%b5%81%e7%a8%8b%e7%a4%ba%e4%be%8b aria-label=六、检测流程示例>六、检测流程示例</a><ul><li><a href=#61-%e4%bc%81%e4%b8%9a%e7%8e%af%e5%a2%83%e6%a3%80%e6%b5%8b%e6%b5%81%e7%a8%8b aria-label="6.1 企业环境检测流程">6.1 企业环境检测流程</a></li><li><a href=#62-%e4%b8%aa%e4%ba%ba%e7%94%a8%e6%88%b7%e6%a3%80%e6%b5%8b%e6%b5%81%e7%a8%8b aria-label="6.2 个人用户检测流程">6.2 个人用户检测流程</a></li></ul></li><li><a href=#%e4%b8%83%e5%bc%80%e6%ba%90%e6%a3%80%e6%b5%8b%e5%b7%a5%e5%85%b7 aria-label=七、开源检测工具>七、开源检测工具</a></li><li><a href=#%e5%85%ab%e5%b1%80%e9%99%90%e6%80%a7%e8%af%b4%e6%98%8e aria-label=八、局限性说明>八、局限性说明</a></li><li><a href=#%e4%b9%9d%e5%8f%82%e8%80%83%e8%b5%84%e6%ba%90 aria-label=九、参考资源>九、参考资源</a></li></ul></div></details></aside><footer class=post-footer><ul class=post-tags><li><a href=https://www.chaoyuewang.cn/tags/%E5%AE%89%E5%85%A8/>安全</a></li><li><a href=https://www.chaoyuewang.cn/tags/%E9%93%B6%E7%8B%90/>银狐</a></li><li><a href=https://www.chaoyuewang.cn/tags/%E6%84%9F%E6%9F%93%E9%93%BE/>感染链</a></li><li><a href=https://www.chaoyuewang.cn/tags/go%E6%9C%A8%E9%A9%AC/>Go木马</a></li><li><a href=https://www.chaoyuewang.cn/tags/ioc/>IOC</a></li><li><a href=https://www.chaoyuewang.cn/tags/yara/>YARA</a></li></ul><nav class=paginav><a class=prev href=https://www.chaoyuewang.cn/posts/welcome/><span class=title>« Prev</span>
+<span>欢迎来到潮越网</span></a></nav></footer></article></main><footer class=footer><span>&copy; 2026 <a href=https://www.chaoyuewang.cn/>超越网</a></span> ·
+<span>Powered by
+<a href="https://gohugo.io/?utm_source=papermod" rel=noopener target=_blank>Hugo</a> &
+<a href=https://github.com/adityatelange/hugo-PaperMod/ rel=noopener target=_blank>PaperMod</a></span></footer><a href=#top id=top-link class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey=g><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+</a><script>let menu=document.getElementById("menu");if(menu){const e=localStorage.getItem("menu-scroll-position");e&&(menu.scrollLeft=parseInt(e,10)),menu.onscroll=function(){localStorage.setItem("menu-scroll-position",menu.scrollLeft)}}document.querySelectorAll('a[href^="#"]').forEach(e=>{e.addEventListener("click",function(e){e.preventDefault();var t=this.getAttribute("href").substr(1);window.matchMedia("(prefers-reduced-motion: reduce)").matches?document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView():document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView({behavior:"smooth"}),t==="top"?history.replaceState(null,null," "):history.pushState(null,null,`#${t}`)})})</script><script>var toplink=document.getElementById("top-link");window.onscroll=function(){const e=window.innerHeight;document.body.scrollTop>e||document.documentElement.scrollTop>e?toplink.classList.remove("hidden"):toplink.classList.add("hidden")}</script><script>document.getElementById("theme-toggle").addEventListener("click",()=>{const e=document.querySelector("html");e.dataset.theme==="dark"?(e.dataset.theme="light",localStorage.setItem("pref-theme","light")):(e.dataset.theme="dark",localStorage.setItem("pref-theme","dark"))})</script><script>document.querySelectorAll("pre > code").forEach(e=>{const n=e.parentNode.parentNode,t=document.createElement("button");t.classList.add("copy-code"),t.innerHTML="copy";function s(){t.innerHTML="copied!",setTimeout(()=>{t.innerHTML="copy"},2e3)}t.addEventListener("click",t=>{if("clipboard"in navigator){navigator.clipboard.writeText(e.textContent),s();return}const n=document.createRange();n.selectNodeContents(e);const o=window.getSelection();o.removeAllRanges(),o.addRange(n);try{document.execCommand("copy"),s()}catch{}o.removeRange(n)}),n.classList.contains("highlight")?n.appendChild(t):n.parentNode.firstChild==n||(e.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName=="TABLE"?e.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(t):e.parentNode.appendChild(t))})</script></body></html>
